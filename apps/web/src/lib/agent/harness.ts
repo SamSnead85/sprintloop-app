@@ -1,672 +1,466 @@
 /**
- * SprintLoop Unified Agent Harness
- * 
- * Best-in-class agent architecture infused from:
- * - Cline: Plan/Act modes, approval workflow, MCP tools
- * - Codex CLI: Terminal-first, multi-file ops, Full Auto mode
- * - OpenCode: Event-driven core, LSP integration, custom agents
- * 
- * This is the core orchestration layer that makes SprintLoop
- * a premium, best-in-class agentic IDE for developers and PMs.
+ * Agent Harness System
+ * Environment and build management for agentic workflows
  */
 
-// Type import removed - AgentRole not used in this file
+import { create } from 'zustand';
 
-// ============================================================================
-// CORE TYPES (Inspired by Cline + OpenCode)
-// ============================================================================
+// =============================================================================
+// TYPES
+// =============================================================================
 
-export type AgentMode = 'suggest' | 'auto_edit' | 'full_auto';
-
-export interface AgentConfig {
+export interface AgentEnvironment {
     id: string;
     name: string;
-    description: string;
-    model: string;
-    provider: 'anthropic' | 'openai' | 'google' | 'local';
-    mode: AgentMode;
-    persona?: string;
-    systemPrompt?: string;
-    tools: AgentTool[];
-    maxTokens: number;
-    temperature: number;
-    approvalRequired: boolean;
+    type: EnvironmentType;
+    status: 'creating' | 'running' | 'stopped' | 'error' | 'destroyed';
+    config: EnvironmentConfig;
+    resources: ResourceUsage;
+    createdAt: number;
+    lastActiveAt: number;
 }
 
-export interface AgentTool {
+export type EnvironmentType =
+    | 'local'
+    | 'docker'
+    | 'kubernetes'
+    | 'cloud-sandbox'
+    | 'remote-vm';
+
+export interface EnvironmentConfig {
+    baseImage?: string;
+    nodeVersion?: string;
+    pythonVersion?: string;
+    ports?: number[];
+    volumes?: string[];
+    envVars?: Record<string, string>;
+    cpuLimit?: number;
+    memoryLimit?: string;
+    networkMode?: 'bridge' | 'host' | 'none';
+    capabilities?: string[];
+}
+
+export interface ResourceUsage {
+    cpu: number; // percentage
+    memory: number; // MB
+    disk: number; // MB
+    network: { rx: number; tx: number }; // bytes/s
+}
+
+export interface BuildJob {
+    id: string;
+    environmentId: string;
     name: string;
-    description: string;
-    schema: object;
-    requiresApproval: boolean;
-    execute: (params: unknown) => Promise<ToolResult>;
+    status: 'queued' | 'running' | 'success' | 'failed' | 'cancelled';
+    steps: BuildStep[];
+    logs: string[];
+    startedAt?: number;
+    completedAt?: number;
+    duration?: number;
+    artifacts?: BuildArtifact[];
 }
 
-export interface ToolResult {
-    success: boolean;
-    output: string;
-    artifacts?: string[];
-    error?: string;
+export interface BuildStep {
+    id: string;
+    name: string;
+    command: string;
+    status: 'pending' | 'running' | 'success' | 'failed' | 'skipped';
+    logs: string[];
+    startedAt?: number;
+    completedAt?: number;
+    exitCode?: number;
+}
+
+export interface BuildArtifact {
+    name: string;
+    path: string;
+    size: number;
+    type: 'file' | 'directory' | 'archive';
+}
+
+export interface AgentSession {
+    id: string;
+    environmentId: string;
+    agentId: string;
+    status: 'active' | 'paused' | 'completed' | 'failed';
+    task: string;
+    progress: number;
+    actions: AgentAction[];
+    createdAt: number;
+    updatedAt: number;
 }
 
 export interface AgentAction {
     id: string;
-    type: 'file_read' | 'file_write' | 'file_delete' | 'terminal_exec' |
-    'browser_navigate' | 'api_call' | 'search' | 'think';
-    params: Record<string, unknown>;
-    status: 'pending' | 'approved' | 'rejected' | 'executing' | 'completed' | 'failed';
-    result?: ToolResult;
-    timestamp: number;
-    requiresApproval: boolean;
-}
-
-export interface AgentPlan {
-    id: string;
-    goal: string;
-    steps: PlanStep[];
-    currentStep: number;
-    status: 'planning' | 'executing' | 'paused' | 'completed' | 'failed';
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface PlanStep {
-    id: string;
+    type: 'file_read' | 'file_write' | 'command' | 'browser' | 'api_call' | 'think' | 'ask';
     description: string;
-    tool: string;
-    params: Record<string, unknown>;
-    status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'skipped';
-    output?: string;
-    error?: string;
-}
-
-// ============================================================================
-// EVENT SYSTEM (Inspired by OpenCode's event-driven architecture)
-// ============================================================================
-
-export type AgentEventType =
-    | 'agent:started'
-    | 'agent:thinking'
-    | 'agent:planning'
-    | 'agent:action_proposed'
-    | 'agent:action_approved'
-    | 'agent:action_rejected'
-    | 'agent:action_executing'
-    | 'agent:action_completed'
-    | 'agent:step_completed'
-    | 'agent:paused'
-    | 'agent:resumed'
-    | 'agent:completed'
-    | 'agent:error'
-    | 'agent:message';
-
-export interface AgentEvent {
-    type: AgentEventType;
-    agentId: string;
+    status: 'pending' | 'executing' | 'completed' | 'failed';
+    result?: unknown;
     timestamp: number;
-    data: unknown;
+    duration?: number;
 }
 
-type EventHandler = (event: AgentEvent) => void;
+// =============================================================================
+// HARNESS STORE
+// =============================================================================
 
-class AgentEventBus {
-    private handlers: Map<AgentEventType, EventHandler[]> = new Map();
-    private globalHandlers: EventHandler[] = [];
+interface HarnessState {
+    environments: Map<string, AgentEnvironment>;
+    builds: Map<string, BuildJob>;
+    sessions: Map<string, AgentSession>;
+    activeEnvironmentId: string | null;
 
-    on(type: AgentEventType, handler: EventHandler): () => void {
-        const handlers = this.handlers.get(type) || [];
-        handlers.push(handler);
-        this.handlers.set(type, handlers);
+    // Environment Management
+    createEnvironment: (name: string, type: EnvironmentType, config?: EnvironmentConfig) => Promise<string>;
+    startEnvironment: (id: string) => Promise<void>;
+    stopEnvironment: (id: string) => Promise<void>;
+    destroyEnvironment: (id: string) => Promise<void>;
+    getEnvironmentStats: (id: string) => ResourceUsage | null;
 
-        return () => {
-            const idx = handlers.indexOf(handler);
-            if (idx > -1) handlers.splice(idx, 1);
+    // Build Management
+    createBuild: (environmentId: string, name: string, steps: Omit<BuildStep, 'id' | 'status' | 'logs'>[]) => Promise<string>;
+    runBuild: (buildId: string) => Promise<BuildJob>;
+    cancelBuild: (buildId: string) => void;
+    getBuildLogs: (buildId: string) => string[];
+
+    // Session Management
+    createSession: (environmentId: string, agentId: string, task: string) => string;
+    updateSessionProgress: (sessionId: string, progress: number) => void;
+    addSessionAction: (sessionId: string, action: Omit<AgentAction, 'id' | 'timestamp'>) => void;
+    endSession: (sessionId: string, status: 'completed' | 'failed') => void;
+
+    // Helpers
+    getEnvironment: (id: string) => AgentEnvironment | undefined;
+    getActiveEnvironment: () => AgentEnvironment | undefined;
+    getEnvironmentSessions: (environmentId: string) => AgentSession[];
+}
+
+export const useHarnessStore = create<HarnessState>((set, get) => ({
+    environments: new Map(),
+    builds: new Map(),
+    sessions: new Map(),
+    activeEnvironmentId: null,
+
+    createEnvironment: async (name, type, config = {}) => {
+        const id = `env-${Date.now()}`;
+        const environment: AgentEnvironment = {
+            id,
+            name,
+            type,
+            status: 'creating',
+            config,
+            resources: { cpu: 0, memory: 0, disk: 0, network: { rx: 0, tx: 0 } },
+            createdAt: Date.now(),
+            lastActiveAt: Date.now(),
         };
-    }
 
-    onAll(handler: EventHandler): () => void {
-        this.globalHandlers.push(handler);
-        return () => {
-            const idx = this.globalHandlers.indexOf(handler);
-            if (idx > -1) this.globalHandlers.splice(idx, 1);
-        };
-    }
+        set(state => {
+            const environments = new Map(state.environments);
+            environments.set(id, environment);
+            return { environments, activeEnvironmentId: id };
+        });
 
-    emit(event: AgentEvent): void {
-        // Notify specific handlers
-        const handlers = this.handlers.get(event.type) || [];
-        for (const handler of handlers) {
-            try {
-                handler(event);
-            } catch (e) {
-                console.error('[AgentEventBus] Handler error:', e);
+        console.log('[Harness] Creating environment:', name, type);
+
+        // Simulate environment creation
+        await new Promise(r => setTimeout(r, 2000));
+
+        set(state => {
+            const environments = new Map(state.environments);
+            const env = environments.get(id);
+            if (env) {
+                environments.set(id, { ...env, status: 'running' });
             }
+            return { environments };
+        });
+
+        return id;
+    },
+
+    startEnvironment: async (id) => {
+        console.log('[Harness] Starting environment:', id);
+        await new Promise(r => setTimeout(r, 1000));
+
+        set(state => {
+            const environments = new Map(state.environments);
+            const env = environments.get(id);
+            if (env) {
+                environments.set(id, { ...env, status: 'running', lastActiveAt: Date.now() });
+            }
+            return { environments };
+        });
+    },
+
+    stopEnvironment: async (id) => {
+        console.log('[Harness] Stopping environment:', id);
+        await new Promise(r => setTimeout(r, 500));
+
+        set(state => {
+            const environments = new Map(state.environments);
+            const env = environments.get(id);
+            if (env) {
+                environments.set(id, { ...env, status: 'stopped' });
+            }
+            return { environments };
+        });
+    },
+
+    destroyEnvironment: async (id) => {
+        console.log('[Harness] Destroying environment:', id);
+        await new Promise(r => setTimeout(r, 1000));
+
+        set(state => {
+            const environments = new Map(state.environments);
+            environments.delete(id);
+            return {
+                environments,
+                activeEnvironmentId: state.activeEnvironmentId === id ? null : state.activeEnvironmentId,
+            };
+        });
+    },
+
+    getEnvironmentStats: (id) => {
+        const env = get().environments.get(id);
+        if (!env || env.status !== 'running') return null;
+
+        // Return simulated stats
+        return {
+            cpu: Math.random() * 50 + 10,
+            memory: Math.random() * 500 + 200,
+            disk: Math.random() * 1000 + 500,
+            network: { rx: Math.random() * 10000, tx: Math.random() * 5000 },
+        };
+    },
+
+    createBuild: async (environmentId, name, steps) => {
+        const id = `build-${Date.now()}`;
+        const build: BuildJob = {
+            id,
+            environmentId,
+            name,
+            status: 'queued',
+            steps: steps.map((s, i) => ({
+                ...s,
+                id: `step-${i}`,
+                status: 'pending' as const,
+                logs: [],
+            })),
+            logs: [],
+        };
+
+        set(state => {
+            const builds = new Map(state.builds);
+            builds.set(id, build);
+            return { builds };
+        });
+
+        return id;
+    },
+
+    runBuild: async (buildId) => {
+        const build = get().builds.get(buildId);
+        if (!build) throw new Error('Build not found');
+
+        console.log('[Harness] Running build:', build.name);
+
+        // Update to running
+        const updateBuild = (updates: Partial<BuildJob>) => {
+            set(state => {
+                const builds = new Map(state.builds);
+                const b = builds.get(buildId);
+                if (b) {
+                    builds.set(buildId, { ...b, ...updates });
+                }
+                return { builds };
+            });
+        };
+
+        updateBuild({ status: 'running', startedAt: Date.now(), logs: ['📦 Build started...'] });
+
+        // Execute each step
+        for (let i = 0; i < build.steps.length; i++) {
+            const step = build.steps[i];
+
+            // Update step to running
+            set(state => {
+                const builds = new Map(state.builds);
+                const b = builds.get(buildId);
+                if (b) {
+                    b.steps[i] = { ...step, status: 'running', startedAt: Date.now() };
+                    b.logs = [...b.logs, `▶️ Running: ${step.name}`];
+                    builds.set(buildId, { ...b });
+                }
+                return { builds };
+            });
+
+            // Simulate step execution
+            await new Promise(r => setTimeout(r, 500 + Math.random() * 1000));
+
+            // Complete step
+            set(state => {
+                const builds = new Map(state.builds);
+                const b = builds.get(buildId);
+                if (b) {
+                    b.steps[i] = {
+                        ...step,
+                        status: 'success',
+                        completedAt: Date.now(),
+                        exitCode: 0,
+                        logs: [`$ ${step.command}`, 'Command completed successfully'],
+                    };
+                    b.logs = [...b.logs, `✅ Completed: ${step.name}`];
+                    builds.set(buildId, { ...b });
+                }
+                return { builds };
+            });
         }
 
-        // Notify global handlers
-        for (const handler of this.globalHandlers) {
-            try {
-                handler(event);
-            } catch (e) {
-                console.error('[AgentEventBus] Global handler error:', e);
+        // Complete build
+        const completedBuild = {
+            ...get().builds.get(buildId)!,
+            status: 'success' as const,
+            completedAt: Date.now(),
+            duration: Date.now() - (build.startedAt || Date.now()),
+            logs: [...build.logs, '🎉 Build completed successfully!'],
+        };
+
+        set(state => {
+            const builds = new Map(state.builds);
+            builds.set(buildId, completedBuild);
+            return { builds };
+        });
+
+        return completedBuild;
+    },
+
+    cancelBuild: (buildId) => {
+        set(state => {
+            const builds = new Map(state.builds);
+            const b = builds.get(buildId);
+            if (b && b.status === 'running') {
+                builds.set(buildId, { ...b, status: 'cancelled', completedAt: Date.now() });
             }
-        }
-    }
-}
-
-export const agentEvents = new AgentEventBus();
-
-// ============================================================================
-// BUILT-IN TOOLS (Inspired by Cline + Codex CLI)
-// ============================================================================
-
-export const BUILT_IN_TOOLS: AgentTool[] = [
-    {
-        name: 'read_file',
-        description: 'Read the contents of a file',
-        schema: { type: 'object', properties: { path: { type: 'string' } }, required: ['path'] },
-        requiresApproval: false,
-        execute: async (params) => {
-            const { path } = params as { path: string };
-            console.log('[Tool] Reading file:', path);
-            // In real implementation, use Tauri FS API
-            return { success: true, output: `Contents of ${path}`, artifacts: [path] };
-        },
+            return { builds };
+        });
     },
-    {
-        name: 'write_file',
-        description: 'Write content to a file',
-        schema: {
-            type: 'object',
-            properties: { path: { type: 'string' }, content: { type: 'string' } },
-            required: ['path', 'content']
-        },
-        requiresApproval: true,
-        execute: async (params) => {
-            const { path, content } = params as { path: string; content: string };
-            console.log('[Tool] Writing file:', path, 'Length:', content.length);
-            return { success: true, output: `Wrote ${content.length} chars to ${path}`, artifacts: [path] };
-        },
+
+    getBuildLogs: (buildId) => {
+        return get().builds.get(buildId)?.logs || [];
     },
-    {
-        name: 'execute_command',
-        description: 'Execute a terminal command',
-        schema: {
-            type: 'object',
-            properties: { command: { type: 'string' }, cwd: { type: 'string' } },
-            required: ['command']
-        },
-        requiresApproval: true,
-        execute: async (params) => {
-            const { command, cwd } = params as { command: string; cwd?: string };
-            console.log('[Tool] Executing command:', command, 'in', cwd || '.');
-            // In real implementation, use Tauri shell API
-            return { success: true, output: `Executed: ${command}` };
-        },
-    },
-    {
-        name: 'search_files',
-        description: 'Search for files matching a pattern',
-        schema: {
-            type: 'object',
-            properties: { pattern: { type: 'string' }, directory: { type: 'string' } },
-            required: ['pattern']
-        },
-        requiresApproval: false,
-        execute: async (params) => {
-            const { pattern, directory } = params as { pattern: string; directory?: string };
-            console.log('[Tool] Searching for:', pattern, 'in', directory || '.');
-            return { success: true, output: `Found files matching ${pattern}` };
-        },
-    },
-    {
-        name: 'search_code',
-        description: 'Search for code patterns using ripgrep',
-        schema: {
-            type: 'object',
-            properties: { query: { type: 'string' }, path: { type: 'string' } },
-            required: ['query']
-        },
-        requiresApproval: false,
-        execute: async (params) => {
-            const { query, path } = params as { query: string; path?: string };
-            console.log('[Tool] Searching code for:', query, 'in', path || '.');
-            return { success: true, output: `Code search results for "${query}"` };
-        },
-    },
-    {
-        name: 'browse_web',
-        description: 'Navigate to a URL and extract content',
-        schema: {
-            type: 'object',
-            properties: { url: { type: 'string' }, selector: { type: 'string' } },
-            required: ['url']
-        },
-        requiresApproval: true,
-        execute: async (params) => {
-            const { url } = params as { url: string };
-            console.log('[Tool] Browsing:', url);
-            return { success: true, output: `Fetched content from ${url}` };
-        },
-    },
-    {
-        name: 'think',
-        description: 'Internal reasoning step - no action taken',
-        schema: {
-            type: 'object',
-            properties: { thought: { type: 'string' } },
-            required: ['thought']
-        },
-        requiresApproval: false,
-        execute: async (params) => {
-            const { thought } = params as { thought: string };
-            return { success: true, output: thought };
-        },
-    },
-];
 
-// ============================================================================
-// AGENT SESSION (Inspired by OpenCode's session management)
-// ============================================================================
-
-export interface AgentSession {
-    id: string;
-    agentId: string;
-    projectPath: string;
-    messages: SessionMessage[];
-    actions: AgentAction[];
-    plan?: AgentPlan;
-    mode: AgentMode;
-    createdAt: number;
-    updatedAt: number;
-}
-
-export interface SessionMessage {
-    id: string;
-    role: 'user' | 'assistant' | 'system' | 'tool';
-    content: string;
-    timestamp: number;
-    toolCalls?: ToolCall[];
-    toolResults?: ToolResult[];
-}
-
-export interface ToolCall {
-    id: string;
-    name: string;
-    params: Record<string, unknown>;
-}
-
-// ============================================================================
-// UNIFIED AGENT HARNESS
-// ============================================================================
-
-export class UnifiedAgentHarness {
-    private config: AgentConfig;
-    private session: AgentSession | null = null;
-    private onApprovalRequest?: (action: AgentAction) => Promise<boolean>;
-
-    constructor(config: AgentConfig) {
-        this.config = config;
-    }
-
-    /**
-     * Start a new agent session
-     */
-    startSession(projectPath: string): AgentSession {
-        this.session = {
-            id: `session-${Date.now()}`,
-            agentId: this.config.id,
-            projectPath,
-            messages: [],
+    createSession: (environmentId, agentId, task) => {
+        const id = `session-${Date.now()}`;
+        const session: AgentSession = {
+            id,
+            environmentId,
+            agentId,
+            status: 'active',
+            task,
+            progress: 0,
             actions: [],
-            mode: this.config.mode,
             createdAt: Date.now(),
             updatedAt: Date.now(),
         };
 
-        // Add system prompt
-        if (this.config.systemPrompt) {
-            this.session.messages.push({
-                id: `msg-${Date.now()}`,
-                role: 'system',
-                content: this.config.systemPrompt,
-                timestamp: Date.now(),
-            });
-        }
-
-        agentEvents.emit({
-            type: 'agent:started',
-            agentId: this.config.id,
-            timestamp: Date.now(),
-            data: { sessionId: this.session.id, projectPath },
+        set(state => {
+            const sessions = new Map(state.sessions);
+            sessions.set(id, session);
+            return { sessions };
         });
 
-        return this.session;
-    }
+        console.log('[Harness] Session created:', id);
+        return id;
+    },
 
-    /**
-     * Process a user message
-     */
-    async processMessage(content: string): Promise<SessionMessage> {
-        if (!this.session) {
-            throw new Error('No active session. Call startSession() first.');
-        }
-
-        // Add user message
-        const userMessage: SessionMessage = {
-            id: `msg-${Date.now()}`,
-            role: 'user',
-            content,
-            timestamp: Date.now(),
-        };
-        this.session.messages.push(userMessage);
-        this.session.updatedAt = Date.now();
-
-        agentEvents.emit({
-            type: 'agent:message',
-            agentId: this.config.id,
-            timestamp: Date.now(),
-            data: { message: userMessage },
-        });
-
-        // Generate plan (Cline's Plan mode)
-        agentEvents.emit({
-            type: 'agent:planning',
-            agentId: this.config.id,
-            timestamp: Date.now(),
-            data: { goal: content },
-        });
-
-        const plan = await this.generatePlan(content);
-        this.session.plan = plan;
-
-        // Execute plan based on mode
-        if (this.config.mode === 'full_auto') {
-            await this.executePlanFullAuto(plan);
-        } else if (this.config.mode === 'auto_edit') {
-            await this.executePlanAutoEdit(plan);
-        } else {
-            await this.executePlanSuggest(plan);
-        }
-
-        // Generate response
-        const response = await this.generateResponse();
-        const assistantMessage: SessionMessage = {
-            id: `msg-${Date.now()}`,
-            role: 'assistant',
-            content: response,
-            timestamp: Date.now(),
-        };
-        this.session.messages.push(assistantMessage);
-
-        return assistantMessage;
-    }
-
-    /**
-     * Generate an execution plan (Cline's structured planning)
-     */
-    private async generatePlan(goal: string): Promise<AgentPlan> {
-        // In real implementation, call LLM to generate plan
-        console.log('[Agent] Generating plan for:', goal);
-
-        const plan: AgentPlan = {
-            id: `plan-${Date.now()}`,
-            goal,
-            steps: [],
-            currentStep: 0,
-            status: 'planning',
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
-        };
-
-        // Simulate plan generation
-        // In production, this would call the AI model
-        plan.steps = [
-            { id: 'step-1', description: 'Analyze request', tool: 'think', params: {}, status: 'pending' },
-            { id: 'step-2', description: 'Search codebase', tool: 'search_code', params: {}, status: 'pending' },
-            { id: 'step-3', description: 'Implement changes', tool: 'write_file', params: {}, status: 'pending' },
-        ];
-
-        plan.status = 'executing';
-        return plan;
-    }
-
-    /**
-     * Full Auto mode - execute without approval (Codex CLI's Full Auto)
-     */
-    private async executePlanFullAuto(plan: AgentPlan): Promise<void> {
-        for (let i = 0; i < plan.steps.length; i++) {
-            plan.currentStep = i;
-            const step = plan.steps[i];
-            step.status = 'in_progress';
-
-            agentEvents.emit({
-                type: 'agent:action_executing',
-                agentId: this.config.id,
-                timestamp: Date.now(),
-                data: { step, index: i },
-            });
-
-            const tool = this.config.tools.find(t => t.name === step.tool);
-            if (tool) {
-                try {
-                    const result = await tool.execute(step.params);
-                    step.status = result.success ? 'completed' : 'failed';
-                    step.output = result.output;
-                } catch (e) {
-                    step.status = 'failed';
-                    step.error = e instanceof Error ? e.message : 'Unknown error';
-                }
-            } else {
-                step.status = 'completed';
-                step.output = `Simulated: ${step.description}`;
+    updateSessionProgress: (sessionId, progress) => {
+        set(state => {
+            const sessions = new Map(state.sessions);
+            const s = sessions.get(sessionId);
+            if (s) {
+                sessions.set(sessionId, { ...s, progress, updatedAt: Date.now() });
             }
+            return { sessions };
+        });
+    },
 
-            agentEvents.emit({
-                type: 'agent:step_completed',
-                agentId: this.config.id,
-                timestamp: Date.now(),
-                data: { step, index: i },
-            });
-        }
-
-        plan.status = 'completed';
-        plan.updatedAt = Date.now();
-    }
-
-    /**
-     * Auto Edit mode - auto-approve reads, require approval for writes
-     */
-    private async executePlanAutoEdit(plan: AgentPlan): Promise<void> {
-        for (let i = 0; i < plan.steps.length; i++) {
-            plan.currentStep = i;
-            const step = plan.steps[i];
-            const tool = this.config.tools.find(t => t.name === step.tool);
-
-            if (tool?.requiresApproval && this.onApprovalRequest) {
-                const action: AgentAction = {
-                    id: `action-${Date.now()}`,
-                    type: 'file_write',
-                    params: step.params,
-                    status: 'pending',
-                    timestamp: Date.now(),
-                    requiresApproval: true,
-                };
-
-                agentEvents.emit({
-                    type: 'agent:action_proposed',
-                    agentId: this.config.id,
-                    timestamp: Date.now(),
-                    data: { action, step },
+    addSessionAction: (sessionId, action) => {
+        set(state => {
+            const sessions = new Map(state.sessions);
+            const s = sessions.get(sessionId);
+            if (s) {
+                sessions.set(sessionId, {
+                    ...s,
+                    actions: [...s.actions, { ...action, id: `action-${Date.now()}`, timestamp: Date.now() }],
+                    updatedAt: Date.now(),
                 });
-
-                const approved = await this.onApprovalRequest(action);
-                if (!approved) {
-                    step.status = 'skipped';
-                    continue;
-                }
             }
-
-            step.status = 'in_progress';
-            // Execute step...
-            step.status = 'completed';
-            step.output = `Completed: ${step.description}`;
-        }
-
-        plan.status = 'completed';
-    }
-
-    /**
-     * Suggest mode - require approval for all actions
-     */
-    private async executePlanSuggest(plan: AgentPlan): Promise<void> {
-        // In suggest mode, we just present the plan and wait for approval
-        agentEvents.emit({
-            type: 'agent:paused',
-            agentId: this.config.id,
-            timestamp: Date.now(),
-            data: { plan, reason: 'Awaiting user approval for plan' },
+            return { sessions };
         });
+    },
 
-        plan.status = 'paused';
-    }
-
-    /**
-     * Approve and execute a paused plan
-     */
-    async approvePlan(): Promise<void> {
-        if (!this.session?.plan || this.session.plan.status !== 'paused') {
-            throw new Error('No paused plan to approve');
-        }
-
-        agentEvents.emit({
-            type: 'agent:resumed',
-            agentId: this.config.id,
-            timestamp: Date.now(),
-            data: {},
+    endSession: (sessionId, status) => {
+        set(state => {
+            const sessions = new Map(state.sessions);
+            const s = sessions.get(sessionId);
+            if (s) {
+                sessions.set(sessionId, { ...s, status, progress: 100, updatedAt: Date.now() });
+            }
+            return { sessions };
         });
+    },
 
-        // Execute with auto-edit mode after approval
-        await this.executePlanAutoEdit(this.session.plan);
-    }
+    getEnvironment: (id) => get().environments.get(id),
 
-    /**
-     * Generate final response
-     */
-    private async generateResponse(): Promise<string> {
-        const plan = this.session?.plan;
-        if (!plan) return 'No actions taken.';
+    getActiveEnvironment: () => {
+        const { activeEnvironmentId, environments } = get();
+        return activeEnvironmentId ? environments.get(activeEnvironmentId) : undefined;
+    },
 
-        const completedSteps = plan.steps.filter(s => s.status === 'completed');
-        return `Completed ${completedSteps.length}/${plan.steps.length} steps:\n${completedSteps.map(s => `• ${s.description}`).join('\n')
-            }`;
-    }
+    getEnvironmentSessions: (environmentId) => {
+        return Array.from(get().sessions.values())
+            .filter(s => s.environmentId === environmentId);
+    },
+}));
 
-    /**
-     * Set approval handler
-     */
-    setApprovalHandler(handler: (action: AgentAction) => Promise<boolean>): void {
-        this.onApprovalRequest = handler;
-    }
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
 
-    /**
-     * Get current session
-     */
-    getSession(): AgentSession | null {
-        return this.session;
-    }
-
-    /**
-     * Get config
-     */
-    getConfig(): AgentConfig {
-        return this.config;
-    }
+/** Create a quick development environment */
+export async function createDevEnvironment(name = 'Development'): Promise<string> {
+    const store = useHarnessStore.getState();
+    return store.createEnvironment(name, 'local', {
+        nodeVersion: '20',
+        pythonVersion: '3.11',
+        envVars: { NODE_ENV: 'development' },
+    });
 }
 
-// ============================================================================
-// PRESET AGENTS (Inspired by OpenCode's agent system)
-// ============================================================================
-
-export const PRESET_AGENTS: Record<string, Partial<AgentConfig>> = {
-    developer: {
-        name: 'Developer Agent',
-        description: 'Full-stack development agent with read/write access',
-        persona: 'Senior full-stack developer',
-        mode: 'auto_edit',
-        approvalRequired: true,
-        tools: BUILT_IN_TOOLS,
-    },
-    planner: {
-        name: 'Planner Agent',
-        description: 'Read-only agent for analysis and planning',
-        persona: 'Technical architect',
-        mode: 'suggest',
-        approvalRequired: false,
-        tools: BUILT_IN_TOOLS.filter(t => !t.requiresApproval),
-    },
-    reviewer: {
-        name: 'Code Reviewer',
-        description: 'Reviews code and suggests improvements',
-        persona: 'Senior code reviewer',
-        mode: 'suggest',
-        approvalRequired: false,
-        tools: [BUILT_IN_TOOLS[0], BUILT_IN_TOOLS[4], BUILT_IN_TOOLS[6]], // read, search, think
-    },
-    automator: {
-        name: 'Full Auto Agent',
-        description: 'Fully autonomous agent (use with caution)',
-        persona: 'Efficient automation specialist',
-        mode: 'full_auto',
-        approvalRequired: false,
-        tools: BUILT_IN_TOOLS,
-    },
-};
-
-/**
- * Create an agent from a preset
- */
-export function createAgentFromPreset(
-    preset: keyof typeof PRESET_AGENTS,
-    overrides?: Partial<AgentConfig>
-): UnifiedAgentHarness {
-    const presetConfig = PRESET_AGENTS[preset];
-
-    const config: AgentConfig = {
-        id: `agent-${preset}-${Date.now()}`,
-        name: presetConfig.name || preset,
-        description: presetConfig.description || '',
-        model: overrides?.model || 'claude-4-sonnet',
-        provider: overrides?.provider || 'anthropic',
-        mode: presetConfig.mode || 'auto_edit',
-        persona: presetConfig.persona,
-        systemPrompt: buildSystemPrompt(presetConfig.persona || preset),
-        tools: presetConfig.tools || BUILT_IN_TOOLS,
-        maxTokens: overrides?.maxTokens || 4096,
-        temperature: overrides?.temperature || 0.7,
-        approvalRequired: presetConfig.approvalRequired ?? true,
-        ...overrides,
-    };
-
-    return new UnifiedAgentHarness(config);
+/** Create a Docker-based sandbox */
+export async function createSandbox(name = 'Sandbox'): Promise<string> {
+    const store = useHarnessStore.getState();
+    return store.createEnvironment(name, 'docker', {
+        baseImage: 'node:20-alpine',
+        memoryLimit: '2g',
+        cpuLimit: 2,
+        networkMode: 'bridge',
+    });
 }
 
-function buildSystemPrompt(persona: string): string {
-    return `You are ${persona}, an expert AI coding assistant integrated into SprintLoop IDE.
+/** Run a quick build */
+export async function quickBuild(commands: string[]): Promise<BuildJob> {
+    const store = useHarnessStore.getState();
+    let envId = store.activeEnvironmentId;
 
-Your capabilities:
-- Read and analyze code files
-- Write and modify code with user approval
-- Execute terminal commands
-- Search through codebases
-- Browse web for documentation
-- Think step-by-step before acting
+    if (!envId) {
+        envId = await createDevEnvironment();
+    }
 
-Guidelines:
-1. Always explain your reasoning before taking action
-2. Request approval for destructive operations
-3. Provide clear, concise responses
-4. Follow project conventions and best practices
-5. Ask clarifying questions when requirements are unclear
+    const buildId = await store.createBuild(
+        envId,
+        'Quick Build',
+        commands.map((cmd, i) => ({ name: `Step ${i + 1}`, command: cmd }))
+    );
 
-You have access to the following tools: read_file, write_file, execute_command, search_files, search_code, browse_web, think.`;
+    return store.runBuild(buildId);
 }

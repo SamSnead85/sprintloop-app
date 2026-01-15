@@ -263,3 +263,8 @@ export * from './browser';
 export * from './email';
 export * from './calendar';
 export * from './filesystem';
+export * from './terminal';
+export * from './git';
+export * from './workflows';
+export * from './api';
+export * from './deploy';
