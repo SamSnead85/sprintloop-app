@@ -1,0 +1,10 @@
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/cargo_toml-2243746844439161.d: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/cargo_toml.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/afs.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/error.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/inheritable.rs
+
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/libcargo_toml-2243746844439161.rlib: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/cargo_toml.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/afs.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/error.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/inheritable.rs
+
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/libcargo_toml-2243746844439161.rmeta: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/cargo_toml.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/afs.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/error.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/inheritable.rs
+
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/cargo_toml.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/afs.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/error.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cargo_toml-0.22.3/src/inheritable.rs:

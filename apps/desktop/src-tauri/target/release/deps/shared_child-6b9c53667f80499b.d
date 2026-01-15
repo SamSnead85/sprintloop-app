@@ -1,0 +1,10 @@
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/shared_child-6b9c53667f80499b.d: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/lib.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/mod.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/unix.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/unix.rs
+
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/libshared_child-6b9c53667f80499b.rlib: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/lib.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/mod.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/unix.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/unix.rs
+
+/Users/ssweilem/Personal IDE - Sprintloop/sprintloop/apps/desktop/src-tauri/target/release/deps/libshared_child-6b9c53667f80499b.rmeta: /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/lib.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/mod.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/unix.rs /Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/unix.rs
+
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/lib.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/mod.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/sys/unix.rs:
+/Users/ssweilem/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/shared_child-1.1.1/src/unix.rs:

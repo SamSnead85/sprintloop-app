@@ -1,28 +1,51 @@
 {
-  "name": "web",
-  "version": "0.1.0",
-  "type": "module",
-  "private": true,
-  "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint --max-warnings 0",
-    "check-types": "next typegen && tsc --noEmit"
-  },
-  "dependencies": {
-    "@repo/ui": "*",
-    "next": "16.1.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
-  },
-  "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@types/node": "^22.15.3",
-    "@types/react": "19.2.2",
-    "@types/react-dom": "19.2.2",
-    "eslint": "^9.39.1",
-    "typescript": "5.9.2"
-  }
+    "name": "@sprintloop/web",
+    "version": "0.1.0",
+    "type": "module",
+    "private": true,
+    "scripts": {
+        "dev": "vite --port 5173",
+        "build": "tsc -b && vite build",
+        "preview": "vite preview",
+        "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.13",
+        "@ai-sdk/google": "^3.0.8",
+        "@ai-sdk/openai": "^3.0.10",
+        "@monaco-editor/react": "^4.7.0",
+        "@radix-ui/react-dialog": "^1.1.15",
+        "@sprintloop/ui": "*",
+        "@tanstack/react-virtual": "^3.13.18",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/addon-web-links": "^0.12.0",
+        "ai": "^6.0.34",
+        "clsx": "^2.1.1",
+        "cmdk": "^1.1.1",
+        "idb": "^8.0.3",
+        "lucide-react": "^0.469.0",
+        "monaco-editor": "^0.55.1",
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "react-resizable-panels": "^2.1.7",
+        "xterm": "^5.3.0",
+        "zustand": "^5.0.10"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.17.0",
+        "@types/react": "^19.0.7",
+        "@types/react-dom": "^19.0.3",
+        "@vitejs/plugin-react": "^4.3.4",
+        "autoprefixer": "^10.4.20",
+        "eslint": "^9.17.0",
+        "eslint-plugin-react-hooks": "^5.1.0",
+        "eslint-plugin-react-refresh": "^0.4.16",
+        "globals": "^15.14.0",
+        "postcss": "^8.5.1",
+        "tailwindcss": "^3.4.17",
+        "typescript": "^5.7.3",
+        "typescript-eslint": "^8.18.2",
+        "vite": "^6.0.7"
+    }
 }
