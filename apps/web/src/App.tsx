@@ -1,29 +1,30 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
     Panel,
     PanelGroup,
     PanelResizeHandle
 } from 'react-resizable-panels'
 import {
-    FolderTree,
-    Code,
-    Terminal as TerminalIcon,
-    MessageSquare,
-    Play,
-    Settings,
     ChevronRight,
     ChevronDown,
     File,
-    Folder
+    Folder,
+    Code
 } from 'lucide-react'
 import { EditorPanel } from './components/EditorPanel'
 import { CommandPalette, useCommandPalette } from './components/CommandPalette'
-import { AIChatPanel } from './components/AIChatPanel'
 import { WelcomeScreen } from './components/WelcomeScreen'
+import { AuthScreen } from './components/AuthScreen'
 import { SprintLoopLogo } from './components/SprintLoopLogo'
-import { ModelSelector } from './components/ModelSelector'
 import { type AIModel } from './config/models'
 import { useProjectStore } from './stores/project-store'
+import { useAuthStore } from './stores/auth-store'
+import { isSupabaseConfigured } from './lib/supabase'
+import { ActivityBar, type ActivityPanel } from './components/ActivityBar'
+import { PromptPanel, type AgentStatus } from './components/PromptPanel'
+import { BottomPanel } from './components/BottomPanel'
+import { PreviewPanel } from './components/PreviewPanel'
+
 
 // App state
 interface ProjectState {
@@ -159,28 +160,6 @@ function FileItem({
     )
 }
 
-function TerminalPanel() {
-    return (
-        <div className="h-full flex flex-col">
-            <div className="h-8 flex items-center px-3 border-b border-white/5 gap-2">
-                <span className="text-xs font-medium text-gray-400">Terminal</span>
-                <div className="flex-1" />
-                <button className="text-gray-500 hover:text-white text-xs">+ New</button>
-            </div>
-            <div className="flex-1 p-3 font-mono text-sm text-green-400 overflow-auto">
-                <div className="text-gray-500">$ </div>
-                <div className="text-gray-300">npm run dev</div>
-                <div className="mt-2 text-green-400">
-                    ✓ Ready in 234ms
-                </div>
-                <div className="text-blue-400">
-                    ➜ Local: http://localhost:5173/
-                </div>
-            </div>
-        </div>
-    )
-}
-
 function ResizeHandle({ direction = 'horizontal' }: { direction?: 'horizontal' | 'vertical' }) {
     return (
         <PanelResizeHandle className={`
@@ -191,56 +170,56 @@ function ResizeHandle({ direction = 'horizontal' }: { direction?: 'horizontal' |
     )
 }
 
-function IconButton({ icon: Icon, active = false, onClick }: { icon: React.ElementType; active?: boolean; onClick?: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className={`
-        w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-150
-        ${active
-                    ? 'bg-white/10 text-white'
-                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-300'
-                }
-      `}
-        >
-            <Icon className="w-5 h-5" />
-        </button>
-    )
-}
-
 interface IDELayoutProps {
     project: ProjectState
     onCloseProject: () => void
     onModelChange: (model: AIModel) => void
 }
 
-function IDELayout({ project, onCloseProject, onModelChange }: IDELayoutProps) {
+function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: IDELayoutProps) {
     const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } = useCommandPalette()
+    const [activePanel, setActivePanel] = useState<ActivityPanel>('files')
+    const [showBottomPanel, setShowBottomPanel] = useState(true)
+    const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle')
+    const { mode } = useProjectStore()
+
+    // Handle prompt submission (placeholder for real AI integration)
+    const handlePromptSubmit = async (prompt: string) => {
+        console.log('Prompt submitted:', prompt)
+        // Simulate agent working
+        setAgentStatus('thinking')
+        setTimeout(() => setAgentStatus('writing'), 2000)
+        setTimeout(() => setAgentStatus('running'), 4000)
+        setTimeout(() => setAgentStatus('idle'), 6000)
+    }
 
     return (
         <div className="h-screen w-screen bg-slate-950 flex flex-col overflow-hidden">
-            {/* Top Bar with Branding and Model Selector */}
-            <div className="h-12 flex items-center justify-between px-4 border-b border-white/5 bg-slate-900/50">
-                <div className="flex items-center gap-3">
-                    <SprintLoopLogo size={28} />
-                    <span className="font-semibold text-white">SprintLoop</span>
-                    <span className="text-gray-500">/</span>
-                    <span className="text-gray-300">{project.name}</span>
+            {/* Top Bar */}
+            <div className="h-11 flex items-center justify-between px-3 border-b border-white/5 bg-slate-900/50">
+                <div className="flex items-center gap-2.5">
+                    <SprintLoopLogo size={24} />
+                    <span className="font-semibold text-white text-sm">SprintLoop</span>
+                    <span className="text-gray-600">/</span>
+                    <span className="text-gray-300 text-sm">{project.name}</span>
                 </div>
 
-                {/* Model Selector in IDE */}
-                <div className="flex items-center gap-3">
-                    <ModelSelector
-                        selectedModel={project.model}
-                        onModelChange={onModelChange}
-                        compact
-                    />
-                    <div className="w-px h-6 bg-white/10" />
+                <div className="flex items-center gap-2">
+                    {/* Mode Indicator */}
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${mode === 'planning'
+                        ? 'bg-purple-500/15 text-purple-400'
+                        : 'bg-green-500/15 text-green-400'
+                        }`}>
+                        {mode === 'planning' ? '🎯 Planning' : '⚡ Executing'}
+                    </div>
+
+                    <div className="w-px h-5 bg-white/10" />
+
                     <button
                         onClick={onCloseProject}
-                        className="px-3 py-1 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded transition-colors"
+                        className="px-2.5 py-1 text-xs text-gray-400 hover:text-white hover:bg-white/5 rounded transition-colors"
                     >
-                        Close Project
+                        Close
                     </button>
                 </div>
             </div>
@@ -248,66 +227,76 @@ function IDELayout({ project, onCloseProject, onModelChange }: IDELayoutProps) {
             {/* Command Palette */}
             <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
 
-            {/* Main Panel Layout */}
+            {/* Main Content */}
             <div className="flex-1 flex overflow-hidden">
+                {/* Activity Bar */}
+                <ActivityBar
+                    activePanel={activePanel}
+                    onPanelChange={setActivePanel}
+                />
+
+                {/* Main Panels */}
                 <PanelGroup direction="horizontal" className="flex-1">
-                    {/* Sidebar */}
-                    <Panel defaultSize={4} minSize={4} maxSize={6} className="panel-bg">
-                        <div className="h-full w-full flex flex-col bg-slate-900/50">
-                            <div className="flex-1 py-3 flex flex-col items-center gap-1">
-                                <IconButton icon={FolderTree} active />
-                                <IconButton icon={Code} />
-                                <IconButton icon={TerminalIcon} />
-                                <IconButton icon={MessageSquare} />
-                                <IconButton icon={Play} />
-                            </div>
-                            <div className="py-3 flex justify-center border-t border-white/5">
-                                <IconButton icon={Settings} />
-                            </div>
-                        </div>
+                    {/* Side Panel (File Explorer / Search / Git / etc) */}
+                    <Panel defaultSize={20} minSize={15} maxSize={35} className="panel-bg">
+                        {activePanel === 'files' && <FileExplorer projectName={project.name} />}
+                        {activePanel === 'search' && (
+                            <div className="p-4 text-gray-500 text-sm">Search panel</div>
+                        )}
+                        {activePanel === 'git' && (
+                            <div className="p-4 text-gray-500 text-sm">Source control</div>
+                        )}
+                        {activePanel === 'kanban' && (
+                            <div className="p-4 text-gray-500 text-sm">Kanban in bottom panel</div>
+                        )}
+                        {activePanel === 'preview' && (
+                            <PreviewPanel />
+                        )}
+                        {activePanel === 'settings' && (
+                            <div className="p-4 text-gray-500 text-sm">Settings</div>
+                        )}
                     </Panel>
 
                     <ResizeHandle />
 
-                    {/* File Explorer */}
-                    <Panel defaultSize={15} minSize={10} maxSize={25} className="panel-bg">
-                        <FileExplorer projectName={project.name} />
-                    </Panel>
-
-                    <ResizeHandle />
-
-                    {/* Main Content Area */}
-                    <Panel defaultSize={55} minSize={30}>
-                        <PanelGroup direction="vertical">
-                            {/* Editor */}
-                            <Panel defaultSize={70} minSize={30} className="panel-bg">
+                    {/* Editor + Bottom Panel */}
+                    <Panel defaultSize={80} minSize={50}>
+                        <div className="h-full flex flex-col">
+                            {/* Editor Area */}
+                            <div className="flex-1 overflow-hidden">
                                 <EditorPanel />
-                            </Panel>
+                            </div>
 
-                            <ResizeHandle direction="vertical" />
-
-                            {/* Terminal */}
-                            <Panel defaultSize={30} minSize={15} className="panel-bg">
-                                <TerminalPanel />
-                            </Panel>
-                        </PanelGroup>
-                    </Panel>
-
-                    <ResizeHandle />
-
-                    {/* AI Chat Panel */}
-                    <Panel defaultSize={22} minSize={15} maxSize={40} className="panel-bg">
-                        <AIChatPanel />
+                            {/* Bottom Panel (Terminal/Kanban/Output) */}
+                            <BottomPanel
+                                isVisible={showBottomPanel}
+                                onClose={() => setShowBottomPanel(false)}
+                                defaultTab={activePanel === 'kanban' ? 'kanban' : 'terminal'}
+                            />
+                        </div>
                     </Panel>
                 </PanelGroup>
             </div>
+
+            {/* Prompt Panel (Bottom) */}
+            <PromptPanel
+                onSubmit={handlePromptSubmit}
+                status={agentStatus}
+                model="Claude 4.5 Sonnet"
+            />
         </div>
     )
 }
 
 export default function App() {
-    // Use the project store for state management
+    // Auth and project state
+    const { isAuthenticated, isLoading: authLoading, initialize } = useAuthStore()
     const { currentProject, isProjectOpen, closeProject, setProjectModel } = useProjectStore()
+
+    // Initialize auth on mount
+    useEffect(() => {
+        initialize()
+    }, [initialize])
 
     const handleCloseProject = useCallback(() => {
         closeProject()
@@ -319,6 +308,23 @@ export default function App() {
         }
         console.log('Switched model to:', model.name)
     }, [currentProject, setProjectModel])
+
+    // Show loading while checking auth
+    if (authLoading && isSupabaseConfigured()) {
+        return (
+            <div className="h-screen w-screen bg-slate-950 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <SprintLoopLogo size={48} />
+                    <div className="text-gray-400 text-sm">Loading...</div>
+                </div>
+            </div>
+        )
+    }
+
+    // Show auth screen if Supabase is configured and user not authenticated
+    if (isSupabaseConfigured() && !isAuthenticated) {
+        return <AuthScreen />
+    }
 
     // Show welcome screen if no project is open
     if (!isProjectOpen || !currentProject) {
