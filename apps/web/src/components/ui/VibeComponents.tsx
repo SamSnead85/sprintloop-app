@@ -168,7 +168,6 @@ interface CommandInputProps {
 export const CommandInput: React.FC<CommandInputProps> = ({
     onSubmit,
     placeholder = 'Ask AI anything... ⌘K',
-    suggestions = [],
 }) => {
     const [value, setValue] = useState('');
     const [focused, setFocused] = useState(false);

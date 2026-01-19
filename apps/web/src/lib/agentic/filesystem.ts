@@ -1,9 +1,12 @@
 /**
  * File System Operations Module
  * Phases 101-200: File reading, writing, organization, and cloud sync
+ * 
+ * NOW CONNECTED TO REAL FILESYSTEM VIA TAURI
  */
 
 import { create } from 'zustand';
+import * as tauriBridge from '../tauri-bridge';
 
 export interface FileEntry {
     path: string;
@@ -93,34 +96,80 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
 
     readFile: async (path, encoding = 'utf-8') => {
         console.log('[FileSystem] Reading:', path);
-        await new Promise(r => setTimeout(r, 100));
+
+        if (tauriBridge.isTauri()) {
+            try {
+                const content = await tauriBridge.readFileContent(path);
+                get().addToRecent(path);
+                return {
+                    path,
+                    content,
+                    encoding,
+                    size: content.length,
+                };
+            } catch (e) {
+                console.error('[FileSystem] Read error:', e);
+                throw e;
+            }
+        }
+
+        // Fallback for browser
         return {
             path,
-            content: `// Contents of ${path}\n`,
+            content: `// Browser mode - file reading not available\n// Path: ${path}`,
             encoding,
-            size: 100,
+            size: 0,
         };
     },
 
     readDirectory: async (path) => {
         console.log('[FileSystem] Listing:', path);
-        await new Promise(r => setTimeout(r, 100));
+
+        if (tauriBridge.isTauri()) {
+            try {
+                const entries = await tauriBridge.readDirectory(path);
+                return entries.map(entry => ({
+                    path: entry.path,
+                    name: entry.name,
+                    type: entry.is_dir ? 'directory' as const : 'file' as const,
+                    size: entry.size,
+                    modified: entry.modified * 1000, // Convert to milliseconds
+                    created: entry.modified * 1000,
+                    extension: entry.is_dir ? undefined : entry.name.split('.').pop(),
+                }));
+            } catch (e) {
+                console.error('[FileSystem] Directory read error:', e);
+                throw e;
+            }
+        }
+
+        // Fallback for browser - return empty
         return [];
     },
 
     exists: async (path) => {
         console.log('[FileSystem] Checking exists:', path);
-        return true;
+        if (tauriBridge.isTauri()) {
+            try {
+                await tauriBridge.readFileContent(path);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+        return false;
     },
 
     getFileInfo: async (path) => {
         console.log('[FileSystem] Getting info:', path);
         const name = path.split('/').pop() || '';
+
+        // For now, return basic info - can be enhanced
         return {
             path,
             name,
             type: 'file' as const,
-            size: 1024,
+            size: 0,
             modified: Date.now(),
             created: Date.now(),
             extension: name.split('.').pop(),
@@ -128,9 +177,17 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     },
 
     writeFile: async (path, content) => {
-        console.log('[FileSystem] Writing:', path, 'Size:', typeof content === 'string' ? content.length : content.byteLength);
-        await new Promise(r => setTimeout(r, 100));
-        get().addToRecent(path);
+        console.log('[FileSystem] Writing:', path);
+
+        if (tauriBridge.isTauri() && typeof content === 'string') {
+            try {
+                await tauriBridge.writeFileContent(path, content);
+                get().addToRecent(path);
+            } catch (e) {
+                console.error('[FileSystem] Write error:', e);
+                throw e;
+            }
+        }
     },
 
     appendFile: async (path, _content) => {

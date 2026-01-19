@@ -48,23 +48,7 @@
     },
     "plugins": {
         "shell": {
-            "open": true,
-            "scope": []
-        },
-        "fs": {
-            "scope": [
-                "$APPDATA",
-                "$HOME",
-                "$DOCUMENT",
-                "$DOWNLOAD"
-            ]
-        },
-        "updater": {
-            "active": true,
-            "endpoints": [
-                "https://releases.sprintloop.ai/updates/{{target}}/{{arch}}/{{current_version}}"
-            ],
-            "pubkey": ""
+            "open": true
         }
     }
 }

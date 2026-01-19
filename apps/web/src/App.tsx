@@ -22,7 +22,8 @@ import { AIChatPanel } from './components/AIChatPanel'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { SprintLoopLogo } from './components/SprintLoopLogo'
 import { ModelSelector } from './components/ModelSelector'
-import { DEFAULT_MODEL, type AIModel } from './config/models'
+import { type AIModel } from './config/models'
+import { useProjectStore } from './stores/project-store'
 
 // App state
 interface ProjectState {
@@ -305,62 +306,34 @@ function IDELayout({ project, onCloseProject, onModelChange }: IDELayoutProps) {
 }
 
 export default function App() {
-    const [project, setProject] = useState<ProjectState>({
-        isOpen: false,
-        path: '',
-        name: '',
-        model: DEFAULT_MODEL
-    })
-
-    const handleOpenProject = useCallback((path: string, model: AIModel) => {
-        const projectName = path ? path.split('/').pop() || 'my-project' : 'demo-project'
-        setProject({
-            isOpen: true,
-            path: path || '/demo',
-            name: projectName,
-            model: model
-        })
-        console.log('Opening project:', path || 'demo project', 'with model:', model.name)
-    }, [])
-
-    const handleNewProject = useCallback((model: AIModel) => {
-        setProject({
-            isOpen: true,
-            path: '/new-project',
-            name: 'new-project',
-            model: model
-        })
-        console.log('Creating new project with model:', model.name)
-    }, [])
+    // Use the project store for state management
+    const { currentProject, isProjectOpen, closeProject, setProjectModel } = useProjectStore()
 
     const handleCloseProject = useCallback(() => {
-        setProject(prev => ({
-            ...prev,
-            isOpen: false,
-            path: '',
-            name: ''
-        }))
-    }, [])
+        closeProject()
+    }, [closeProject])
 
     const handleModelChange = useCallback((model: AIModel) => {
-        setProject(prev => ({ ...prev, model }))
+        if (currentProject) {
+            setProjectModel(model)
+        }
         console.log('Switched model to:', model.name)
-    }, [])
+    }, [currentProject, setProjectModel])
 
     // Show welcome screen if no project is open
-    if (!project.isOpen) {
-        return (
-            <WelcomeScreen
-                onOpenProject={handleOpenProject}
-                onNewProject={handleNewProject}
-            />
-        )
+    if (!isProjectOpen || !currentProject) {
+        return <WelcomeScreen />
     }
 
     // Show IDE layout when project is open
     return (
         <IDELayout
-            project={project}
+            project={{
+                isOpen: true,
+                path: currentProject.path,
+                name: currentProject.name,
+                model: currentProject.model
+            }}
             onCloseProject={handleCloseProject}
             onModelChange={handleModelChange}
         />

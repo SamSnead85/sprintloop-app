@@ -423,6 +423,249 @@ export const useHarnessStore = create<HarnessState>((set, get) => ({
 }));
 
 // =============================================================================
+// AGENT TYPES (Required by flows.ts, pool.ts, index.ts)
+// =============================================================================
+
+export type AgentMode = 'plan' | 'act' | 'auto' | 'review';
+
+export interface AgentConfig {
+    id?: string;
+    mode?: AgentMode;
+    persona?: string;
+    maxIterations?: number;
+    autoApprove?: boolean;
+}
+
+export interface AgentTool {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+    execute: (params: Record<string, unknown>) => Promise<ToolResult>;
+}
+
+export interface ToolResult {
+    success: boolean;
+    output: string;
+    artifacts?: string[];
+}
+
+export interface AgentPlan {
+    id: string;
+    steps: PlanStep[];
+    status: 'draft' | 'approved' | 'executing' | 'completed';
+}
+
+export interface PlanStep {
+    id: string;
+    description: string;
+    tool?: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+}
+
+export type AgentEventType =
+    | 'agent:started'
+    | 'agent:message'
+    | 'agent:action_executing'
+    | 'agent:step_completed'
+    | 'agent:completed'
+    | 'agent:error'
+    | 'agent:paused';
+
+export interface AgentEvent {
+    type: AgentEventType;
+    agentId: string;
+    timestamp: number;
+    data?: Record<string, unknown>;
+}
+
+export interface SessionMessage {
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: number;
+}
+
+export interface ToolCall {
+    id: string;
+    tool: string;
+    params: Record<string, unknown>;
+    result?: ToolResult;
+}
+
+// =============================================================================
+// AGENT EVENT EMITTER
+// =============================================================================
+
+class AgentEventEmitter {
+    private listeners: ((event: AgentEvent) => void)[] = [];
+
+    emit(event: AgentEvent): void {
+        this.listeners.forEach(listener => listener(event));
+    }
+
+    subscribe(listener: (event: AgentEvent) => void): () => void {
+        this.listeners.push(listener);
+        return () => {
+            this.listeners = this.listeners.filter(l => l !== listener);
+        };
+    }
+}
+
+export const agentEvents = new AgentEventEmitter();
+
+// =============================================================================
+// UNIFIED AGENT HARNESS
+// =============================================================================
+
+export class UnifiedAgentHarness {
+    private id: string;
+    private _mode: AgentMode;
+    private currentSession: AgentSession | null = null;
+    private _projectPath: string = '';
+
+    constructor(config: AgentConfig = {}) {
+        this.id = config.id || `agent-${Date.now()}`;
+        this._mode = config.mode || 'act';
+    }
+
+    startSession(projectPath: string): AgentSession {
+        this._projectPath = projectPath;
+        const store = useHarnessStore.getState();
+        const envId = store.activeEnvironmentId || 'default-env';
+        const sessionId = store.createSession(envId, this.id, 'Agent session');
+
+        this.currentSession = {
+            id: sessionId,
+            environmentId: envId,
+            agentId: this.id,
+            status: 'active',
+            task: '',
+            progress: 0,
+            actions: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        };
+
+        agentEvents.emit({
+            type: 'agent:started',
+            agentId: this.id,
+            timestamp: Date.now(),
+            data: { sessionId, projectPath },
+        });
+
+        return this.currentSession;
+    }
+
+    async processMessage(message: string): Promise<{ content: string; toolCalls?: ToolCall[] }> {
+        if (!this.currentSession) {
+            throw new Error('No active session. Call startSession first.');
+        }
+
+        agentEvents.emit({
+            type: 'agent:message',
+            agentId: this.id,
+            timestamp: Date.now(),
+            data: { message },
+        });
+
+        // Simulate processing
+        await new Promise(r => setTimeout(r, 500));
+
+        return {
+            content: `Processed: ${message.slice(0, 100)}...`,
+            toolCalls: [],
+        };
+    }
+
+    endSession(): void {
+        if (this.currentSession) {
+            const store = useHarnessStore.getState();
+            store.endSession(this.currentSession.id, 'completed');
+
+            agentEvents.emit({
+                type: 'agent:completed',
+                agentId: this.id,
+                timestamp: Date.now(),
+                data: { sessionId: this.currentSession.id },
+            });
+
+            this.currentSession = null;
+        }
+    }
+
+    getSession(): AgentSession | null {
+        return this.currentSession;
+    }
+
+    getId(): string {
+        return this.id;
+    }
+
+    getMode(): AgentMode {
+        return this._mode;
+    }
+
+    getProjectPath(): string {
+        return this._projectPath;
+    }
+}
+
+// =============================================================================
+// PRESET AGENTS
+// =============================================================================
+
+export const PRESET_AGENTS = {
+    developer: { persona: 'developer', mode: 'act' as AgentMode },
+    architect: { persona: 'architect', mode: 'plan' as AgentMode },
+    reviewer: { persona: 'reviewer', mode: 'review' as AgentMode },
+    debugger: { persona: 'debugger', mode: 'act' as AgentMode },
+};
+
+export const BUILT_IN_TOOLS: AgentTool[] = [
+    {
+        name: 'read_file',
+        description: 'Read a file from the filesystem',
+        parameters: { path: { type: 'string' } },
+        execute: async (_params) => ({ success: true, output: 'File content' }),
+    },
+    {
+        name: 'write_file',
+        description: 'Write content to a file',
+        parameters: { path: { type: 'string' }, content: { type: 'string' } },
+        execute: async (_params) => ({ success: true, output: 'File written' }),
+    },
+    {
+        name: 'execute_command',
+        description: 'Execute a shell command',
+        parameters: { command: { type: 'string' } },
+        execute: async (_params) => ({ success: true, output: 'Command executed' }),
+    },
+    {
+        name: 'search_code',
+        description: 'Search for code patterns',
+        parameters: { query: { type: 'string' } },
+        execute: async (_params) => ({ success: true, output: 'Search results' }),
+    },
+    {
+        name: 'think',
+        description: 'Internal reasoning step',
+        parameters: { thought: { type: 'string' } },
+        execute: async (_params) => ({ success: true, output: 'Thinking complete' }),
+    },
+];
+
+export function createAgentFromPreset(
+    presetName: keyof typeof PRESET_AGENTS,
+    overrides: Partial<AgentConfig> = {}
+): UnifiedAgentHarness {
+    const preset = PRESET_AGENTS[presetName];
+    return new UnifiedAgentHarness({
+        ...preset,
+        ...overrides,
+    });
+}
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 
