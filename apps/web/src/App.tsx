@@ -21,10 +21,12 @@ import { useProjectStore } from './stores/project-store'
 import { useAuthStore } from './stores/auth-store'
 import { isSupabaseConfigured } from './lib/supabase'
 import { ActivityBar, type ActivityPanel } from './components/ActivityBar'
-import { PromptPanel, type AgentStatus } from './components/PromptPanel'
 import { BottomPanel } from './components/BottomPanel'
 import { PreviewPanel } from './components/PreviewPanel'
 import { InlineEditMode, useInlineEditMode } from './components/InlineEditMode'
+import { AIChatPanel } from './components/AIChatPanel'
+import { StatusBar } from './components/StatusBar'
+import { useChatStore } from './stores/chat-store'
 
 
 // App state
@@ -181,21 +183,24 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
     const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } = useCommandPalette()
     const [activePanel, setActivePanel] = useState<ActivityPanel>('files')
     const [showBottomPanel, setShowBottomPanel] = useState(true)
-    const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle')
+    const [showAIPanel, setShowAIPanel] = useState(true)
     const { mode } = useProjectStore()
+    const { isStreaming } = useChatStore()
+
+    // Keyboard shortcut to toggle AI panel (Cmd+Shift+A)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.metaKey && e.shiftKey && e.key === 'a') {
+                e.preventDefault()
+                setShowAIPanel(prev => !prev)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     // Inline edit mode (Cmd+K)
     const { isOpen: inlineEditOpen, selection, closeEditMode } = useInlineEditMode()
-
-    // Handle prompt submission (placeholder for real AI integration)
-    const handlePromptSubmit = async (prompt: string) => {
-        console.log('Prompt submitted:', prompt)
-        // Simulate agent working
-        setAgentStatus('thinking')
-        setTimeout(() => setAgentStatus('writing'), 2000)
-        setTimeout(() => setAgentStatus('running'), 4000)
-        setTimeout(() => setAgentStatus('idle'), 6000)
-    }
 
     // Handle inline edit accept
     const handleInlineEditAccept = (newCode: string) => {
@@ -249,7 +254,7 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
                 {/* Main Panels */}
                 <PanelGroup direction="horizontal" className="flex-1">
                     {/* Side Panel (File Explorer / Search / Git / etc) */}
-                    <Panel defaultSize={20} minSize={15} maxSize={35} className="panel-bg">
+                    <Panel defaultSize={18} minSize={12} maxSize={30} className="panel-bg">
                         {activePanel === 'files' && <FileExplorer projectName={project.name} />}
                         {activePanel === 'search' && (
                             <div className="p-4 text-gray-500 text-sm">Search panel</div>
@@ -270,8 +275,8 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
 
                     <ResizeHandle />
 
-                    {/* Editor + Bottom Panel */}
-                    <Panel defaultSize={80} minSize={50}>
+                    {/* Editor + Bottom Panel (Center) */}
+                    <Panel defaultSize={showAIPanel ? 55 : 82} minSize={40}>
                         <div className="h-full flex flex-col">
                             {/* Editor Area */}
                             <div className="flex-1 overflow-hidden">
@@ -286,14 +291,27 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
                             />
                         </div>
                     </Panel>
+
+                    {/* AI Chat Sidebar (Right) - Antigravity style */}
+                    {showAIPanel && (
+                        <>
+                            <ResizeHandle />
+                            <Panel defaultSize={27} minSize={20} maxSize={40} className="panel-bg border-l border-white/5">
+                                <AIChatPanel />
+                            </Panel>
+                        </>
+                    )}
                 </PanelGroup>
             </div>
 
-            {/* Prompt Panel (Bottom) */}
-            <PromptPanel
-                onSubmit={handlePromptSubmit}
-                status={agentStatus}
-                model="Claude 4.5 Sonnet"
+            {/* Status Bar (Bottom) */}
+            <StatusBar
+                gitBranch="main"
+                lineNumber={1}
+                columnNumber={1}
+                language="TypeScript"
+                aiModel="Claude 4"
+                aiStatus={isStreaming ? 'streaming' : 'idle'}
             />
 
             {/* Inline Edit Mode (Cmd+K) */}

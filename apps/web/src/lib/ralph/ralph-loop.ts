@@ -163,17 +163,71 @@ export class RalphLoop {
         ).join('\n');
     }
 
-    /** Execute the AI task (placeholder for actual AI integration) */
+    /** Execute the AI task with real provider integration */
     private async executeTask(prompt: string, context: string): Promise<{ output: string; filesModified: string[] }> {
-        // This would integrate with the SprintLoop AI provider
-        // For now, return a placeholder
-        console.log(`[Ralph Loop] Executing with prompt: ${prompt.slice(0, 50)}...`);
-        console.log(`[Ralph Loop] Context: ${context || 'Fresh start'}`);
+        // Import the AI provider
+        const { generateWithCompliance } = await import('../ai/provider');
+        const { executeTool, getAllTools } = await import('../tools/registry');
 
-        return {
-            output: `Iteration complete. Working on: ${this.config.completionPromise}`,
-            filesModified: [],
-        };
+        // Build enhanced prompt with context and available tools
+        const enhancedPrompt = `You are in a Ralph Wiggum iterative development loop.
+
+**Goal:** ${this.config.completionPromise}
+
+**Available Tools:**
+${getAllTools().map(t => `- ${t.name}: ${t.description}`).join('\n')}
+
+**Previous Context:**
+${context || 'This is the first iteration.'}
+
+**Current Task:**
+${prompt}
+
+**Instructions:**
+1. Analyze the current state
+2. Make progress toward the completion goal
+3. If you need to modify files, specify the tool calls in JSON format:
+   \`\`\`tool
+   {"tool": "write", "args": {"path": "...", "content": "..."}}
+   \`\`\`
+4. When the goal is achieved, include the exact phrase: "${this.config.completionPromise}"
+
+Proceed with the next step:`;
+
+        try {
+            const result = await generateWithCompliance([], enhancedPrompt);
+            const output = result.text;
+            const filesModified: string[] = [];
+
+            // Parse and execute tool calls from the AI response
+            const toolCallMatches = output.matchAll(/```tool\n(\{[\s\S]*?\})\n```/g);
+            for (const match of toolCallMatches) {
+                try {
+                    const toolCall = JSON.parse(match[1]);
+                    if (toolCall.tool && toolCall.args) {
+                        console.log(`[Ralph Loop] Executing tool: ${toolCall.tool}`);
+                        const toolResult = await executeTool(toolCall.tool, toolCall.args);
+
+                        // Track modified files
+                        if (toolCall.tool === 'write' || toolCall.tool === 'edit') {
+                            filesModified.push(toolCall.args.path);
+                        }
+
+                        console.log(`[Ralph Loop] Tool result:`, toolResult.success ? 'Success' : toolResult.error);
+                    }
+                } catch (parseError) {
+                    console.warn(`[Ralph Loop] Failed to parse tool call:`, parseError);
+                }
+            }
+
+            return { output, filesModified };
+        } catch (error) {
+            console.error(`[Ralph Loop] AI execution error:`, error);
+            return {
+                output: `Error during iteration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                filesModified: [],
+            };
+        }
     }
 
     /** Check if completion criteria is met */
