@@ -68,8 +68,9 @@ function Navigation() {
             </a>
             <div className="nav-links">
                 <a href="#features" className="nav-link">Features</a>
+                <a href="https://app.sprintloop.ai" className="nav-link">Web App</a>
                 <a href="https://docs.sprintloop.ai" className="nav-link">Docs</a>
-                <a href="https://github.com/sprintloop" className="nav-link">GitHub</a>
+                <a href="https://github.com/SamSnead85/sprintloop-app" className="nav-link">GitHub</a>
                 <a href={platform.downloadUrl} className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>
                     <Download size={16} />
                     Download
@@ -114,18 +115,18 @@ function Hero() {
 
                 {/* CTA Buttons */}
                 <div className="flex items-center justify-center gap-4 mt-12">
-                    <a href={platform.downloadUrl} className="btn btn-primary">
+                    <a href="https://app.sprintloop.ai" className="btn btn-primary">
+                        <ArrowRight size={20} />
+                        Launch Web App
+                    </a>
+                    <a href={platform.downloadUrl} className="btn btn-secondary">
                         <PlatformIcon size={20} />
                         Download for {platform.os}
-                    </a>
-                    <a href="#features" className="btn btn-secondary">
-                        Explore features
-                        <ArrowRight size={18} />
                     </a>
                 </div>
 
                 <p className="mt-4" style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                    Available at no charge • v0.1.0
+                    Free to use • Desktop v0.1.0 • Web app always up-to-date
                 </p>
 
                 {/* Feature Grid */}
@@ -199,7 +200,8 @@ function Footer() {
             <div className="flex items-center justify-center gap-4 mt-4">
                 <a href="/privacy" className="nav-link">Privacy</a>
                 <a href="/terms" className="nav-link">Terms</a>
-                <a href="https://github.com/sprintloop" className="nav-link">GitHub</a>
+                <a href="https://app.sprintloop.ai" className="nav-link">Web App</a>
+                <a href="https://github.com/SamSnead85/sprintloop-app" className="nav-link">GitHub</a>
             </div>
         </footer>
     );
