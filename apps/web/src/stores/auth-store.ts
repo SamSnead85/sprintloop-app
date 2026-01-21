@@ -67,8 +67,8 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
                 const { data, error } = await auth.signUp(email, password, name);
 
-                if (error) {
-                    set({ isLoading: false, error: error.message });
+                if (error || !data) {
+                    set({ isLoading: false, error: error?.message || 'Sign up failed' });
                     return false;
                 }
 
@@ -85,8 +85,8 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
                 const { data, error } = await auth.signIn(email, password);
 
-                if (error) {
-                    set({ isLoading: false, error: error.message });
+                if (error || !data) {
+                    set({ isLoading: false, error: error?.message || 'Sign in failed' });
                     return false;
                 }
 

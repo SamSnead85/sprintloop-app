@@ -24,6 +24,7 @@ import { ActivityBar, type ActivityPanel } from './components/ActivityBar'
 import { PromptPanel, type AgentStatus } from './components/PromptPanel'
 import { BottomPanel } from './components/BottomPanel'
 import { PreviewPanel } from './components/PreviewPanel'
+import { InlineEditMode, useInlineEditMode } from './components/InlineEditMode'
 
 
 // App state
@@ -183,6 +184,9 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
     const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle')
     const { mode } = useProjectStore()
 
+    // Inline edit mode (Cmd+K)
+    const { isOpen: inlineEditOpen, selection, closeEditMode } = useInlineEditMode()
+
     // Handle prompt submission (placeholder for real AI integration)
     const handlePromptSubmit = async (prompt: string) => {
         console.log('Prompt submitted:', prompt)
@@ -191,6 +195,13 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
         setTimeout(() => setAgentStatus('writing'), 2000)
         setTimeout(() => setAgentStatus('running'), 4000)
         setTimeout(() => setAgentStatus('idle'), 6000)
+    }
+
+    // Handle inline edit accept
+    const handleInlineEditAccept = (newCode: string) => {
+        console.log('Inline edit accepted:', newCode)
+        closeEditMode()
+        // TODO: Apply the edit to the editor
     }
 
     return (
@@ -284,6 +295,18 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
                 status={agentStatus}
                 model="Claude 4.5 Sonnet"
             />
+
+            {/* Inline Edit Mode (Cmd+K) */}
+            {selection && (
+                <InlineEditMode
+                    isOpen={inlineEditOpen}
+                    selectedCode={selection.code}
+                    filename={selection.filename}
+                    lineRange={selection.lineRange}
+                    onAccept={handleInlineEditAccept}
+                    onCancel={closeEditMode}
+                />
+            )}
         </div>
     )
 }
