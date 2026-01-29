@@ -76,6 +76,7 @@ export const readTool: ToolDefinition = {
     id: 'read',
     name: 'Read File',
     description: 'Read the contents of a file. Can optionally specify a line range to read only a portion of the file.',
+    requiredCapabilities: ['fileSystem.read'],
     parameters: [
         {
             name: 'file_path',

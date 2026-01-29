@@ -79,6 +79,7 @@ export const editTool: ToolDefinition = {
     id: 'edit',
     name: 'Edit File',
     description: 'Edit a file by replacing specific content. Provide the exact content to find and the content to replace it with. The old_content must match exactly.',
+    requiredCapabilities: ['fileSystem.read', 'fileSystem.write'],
     parameters: [
         {
             name: 'file_path',

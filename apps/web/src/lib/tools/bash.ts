@@ -78,6 +78,7 @@ export const bashTool: ToolDefinition = {
     id: 'bash',
     name: 'Execute Command',
     description: 'Execute a shell command in the terminal. Use for running build commands, tests, git operations, etc. Commands run in bash/zsh.',
+    requiredCapabilities: ['shell.execute'],
     parameters: [
         {
             name: 'command',
