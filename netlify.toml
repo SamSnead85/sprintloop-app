@@ -1,11 +1,8 @@
 # Netlify Configuration for SprintLoop Web App
 
 [build]
-  # Build from repo root to resolve workspace dependencies
-  # No base directory - run from root
-  
-  # Install all workspace deps, then build web app
-  command = "npm ci && npm run build --workspace=@sprintloop/web"
+  # Build from repo root using turbo (handles monorepo deps)
+  command = "npm ci && npx turbo run build --filter=@sprintloop/web"
   
   # Publish directory (relative to repo root)
   publish = "apps/web/dist"
