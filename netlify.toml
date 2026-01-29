@@ -4,11 +4,11 @@
   # Directory to run build commands in
   base = "apps/web"
   
-  # Build command
-  command = "npm run build"
+  # Build command (install deps first)
+  command = "npm ci && npm run build"
   
-  # Directory containing built files
-  publish = "apps/web/dist"
+  # Directory containing built files (relative to base)
+  publish = "dist"
 
 [build.environment]
   # Node version
