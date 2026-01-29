@@ -1,8 +1,8 @@
 # Netlify Configuration for SprintLoop Web App
 
 [build]
-  # Install with dev deps, then build using turbo from root
-  command = "npm install --include=dev && npm run build"
+  # Install deps, install build tools globally, then build
+  command = "npm install && npm install -g typescript vite && cd apps/web && npm run build"
   
   # Publish directory (relative to repo root)
   publish = "apps/web/dist"
