@@ -1,8 +1,8 @@
 # Netlify Configuration for SprintLoop Web App
 
 [build]
-  # Install deps, install build tools globally, then build
-  command = "npm install && npm install -g typescript vite && cd apps/web && npm run build"
+  # Use dedicated build script for reliable monorepo builds
+  command = "bash scripts/netlify-build.sh"
   
   # Publish directory (relative to repo root)
   publish = "apps/web/dist"
