@@ -10,8 +10,6 @@
 [build.environment]
   # Node version
   NODE_VERSION = "20"
-  # Don't skip devDependencies during install
-  NPM_FLAGS = "--include=dev"
 
 # SPA routing - redirect all routes to index.html
 [[redirects]]
@@ -37,11 +35,3 @@
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-# Environment-specific settings - don't set NODE_ENV=production during build
-[context.production]
-  command = "npm install --include=dev && npm run build"
-
-[context.deploy-preview]
-  environment = { NODE_ENV = "development" }
-
