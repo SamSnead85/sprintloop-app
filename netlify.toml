@@ -1,8 +1,8 @@
 # Netlify Configuration for SprintLoop Web App
 
 [build]
-  # Install all workspace deps from root, then build web app directly
-  command = "npm ci && cd apps/web && npm run build"
+  # Enable corepack for npm version, install deps, then build
+  command = "corepack enable && npm install && cd apps/web && npm run build"
   
   # Publish directory (relative to repo root)
   publish = "apps/web/dist"
