@@ -1,8 +1,8 @@
 # Netlify Configuration for SprintLoop Web App
 
 [build]
-  # Enable corepack for npm version, install deps, then build
-  command = "corepack enable && npm install && cd apps/web && npm run build"
+  # Install with dev deps, then build using turbo from root
+  command = "npm install --include=dev && npm run build"
   
   # Publish directory (relative to repo root)
   publish = "apps/web/dist"
@@ -10,6 +10,8 @@
 [build.environment]
   # Node version
   NODE_VERSION = "20"
+  # Don't skip devDependencies during install
+  NPM_FLAGS = "--include=dev"
 
 # SPA routing - redirect all routes to index.html
 [[redirects]]
@@ -36,9 +38,10 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Environment-specific settings
+# Environment-specific settings - don't set NODE_ENV=production during build
 [context.production]
-  environment = { NODE_ENV = "production" }
+  command = "npm install --include=dev && npm run build"
 
 [context.deploy-preview]
   environment = { NODE_ENV = "development" }
+
