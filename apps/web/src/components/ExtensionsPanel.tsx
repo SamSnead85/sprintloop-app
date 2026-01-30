@@ -4,13 +4,29 @@
  * UI for browsing and managing extensions.
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     useExtensionsService,
     Extension,
     ExtensionCategory,
-    EXTENSION_CATEGORY_INFO,
 } from '../lib/extensions/extensions-service';
+
+// =============================================================================
+// CATEGORY INFO
+// =============================================================================
+
+const EXTENSION_CATEGORY_INFO: Record<ExtensionCategory, { label: string; icon: string }> = {
+    themes: { label: 'Themes', icon: '🎨' },
+    languages: { label: 'Languages', icon: '📝' },
+    snippets: { label: 'Snippets', icon: '✂️' },
+    formatters: { label: 'Formatters', icon: '✨' },
+    linters: { label: 'Linters', icon: '🔍' },
+    debuggers: { label: 'Debuggers', icon: '🐛' },
+    keymaps: { label: 'Keymaps', icon: '⌨️' },
+    other: { label: 'Other', icon: '📦' },
+};
+
+type TabType = 'installed' | 'recommended' | 'all';
 
 interface ExtensionsPanelProps {
     className?: string;
@@ -23,32 +39,57 @@ export const ExtensionsPanel: React.FC<ExtensionsPanelProps> = ({ className }) =
         isLoading,
         searchQuery,
         selectedCategory,
-        setSearchQuery,
-        setSelectedCategory,
-        searchExtensions,
-        getByCategory,
-        getRecommended,
-        isInstalled,
+        searchMarketplace,
+        filterByCategory,
+        getExtensionsByCategory,
     } = useExtensionsService();
 
-    const getFilteredExtensions = (): Extension[] => {
-        if (searchQuery) {
-            return searchExtensions(searchQuery);
-        }
+    const [activeTab, setActiveTab] = useState<TabType>('installed');
 
-        switch (selectedCategory) {
-            case 'installed':
-                return installed;
-            case 'recommended':
-                return getRecommended();
-            case 'all':
-                return marketplace;
-            default:
-                return getByCategory(selectedCategory);
+    const handleSearch = (query: string) => {
+        searchMarketplace(query);
+    };
+
+    const handleCategoryClick = (category: ExtensionCategory | null) => {
+        filterByCategory(category);
+        setActiveTab('all');
+    };
+
+    const handleTabClick = (tab: TabType) => {
+        setActiveTab(tab);
+        if (tab !== 'all') {
+            filterByCategory(null);
         }
     };
 
-    const extensions = getFilteredExtensions();
+    const filteredExtensions = useMemo((): Extension[] => {
+        const query = searchQuery.toLowerCase();
+        let baseList: Extension[];
+
+        switch (activeTab) {
+            case 'installed':
+                baseList = installed;
+                break;
+            case 'recommended':
+                baseList = marketplace.filter(e => !e.installed && e.rating >= 4.5);
+                break;
+            case 'all':
+                baseList = selectedCategory ? getExtensionsByCategory(selectedCategory) : marketplace;
+                break;
+            default:
+                baseList = marketplace;
+        }
+
+        if (query) {
+            return baseList.filter(e =>
+                e.displayName.toLowerCase().includes(query) ||
+                e.description.toLowerCase().includes(query) ||
+                e.publisher.toLowerCase().includes(query)
+            );
+        }
+        return baseList;
+    }, [activeTab, installed, marketplace, searchQuery, selectedCategory, getExtensionsByCategory]);
+
     const categories = Object.keys(EXTENSION_CATEGORY_INFO) as ExtensionCategory[];
 
     return (
@@ -59,27 +100,27 @@ export const ExtensionsPanel: React.FC<ExtensionsPanelProps> = ({ className }) =
                     type="text"
                     placeholder="Search extensions in marketplace..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => handleSearch(e.target.value)}
                 />
             </div>
 
             {/* Category Tabs */}
             <div className="extensions-panel__tabs">
                 <button
-                    className={selectedCategory === 'installed' ? 'active' : ''}
-                    onClick={() => setSelectedCategory('installed')}
+                    className={activeTab === 'installed' ? 'active' : ''}
+                    onClick={() => handleTabClick('installed')}
                 >
                     Installed ({installed.length})
                 </button>
                 <button
-                    className={selectedCategory === 'recommended' ? 'active' : ''}
-                    onClick={() => setSelectedCategory('recommended')}
+                    className={activeTab === 'recommended' ? 'active' : ''}
+                    onClick={() => handleTabClick('recommended')}
                 >
                     Recommended
                 </button>
                 <button
-                    className={selectedCategory === 'all' ? 'active' : ''}
-                    onClick={() => setSelectedCategory('all')}
+                    className={activeTab === 'all' ? 'active' : ''}
+                    onClick={() => handleTabClick('all')}
                 >
                     All
                 </button>
@@ -93,7 +134,7 @@ export const ExtensionsPanel: React.FC<ExtensionsPanelProps> = ({ className }) =
                         <button
                             key={category}
                             className={`extensions-panel__category-btn ${selectedCategory === category ? 'active' : ''}`}
-                            onClick={() => setSelectedCategory(category)}
+                            onClick={() => handleCategoryClick(category)}
                             title={info.label}
                         >
                             {info.icon}
@@ -106,20 +147,19 @@ export const ExtensionsPanel: React.FC<ExtensionsPanelProps> = ({ className }) =
             <div className="extensions-panel__list">
                 {isLoading ? (
                     <div className="extensions-panel__loading">Loading...</div>
-                ) : extensions.length === 0 ? (
+                ) : filteredExtensions.length === 0 ? (
                     <div className="extensions-panel__empty">
                         {searchQuery
                             ? `No extensions found for "${searchQuery}"`
-                            : selectedCategory === 'installed'
+                            : activeTab === 'installed'
                                 ? 'No extensions installed'
                                 : 'No extensions available'}
                     </div>
                 ) : (
-                    extensions.map(ext => (
+                    filteredExtensions.map(ext => (
                         <ExtensionCard
                             key={ext.id}
                             extension={ext}
-                            isInstalled={isInstalled(ext.id)}
                         />
                     ))
                 )}
@@ -134,18 +174,17 @@ export const ExtensionsPanel: React.FC<ExtensionsPanelProps> = ({ className }) =
 
 interface ExtensionCardProps {
     extension: Extension;
-    isInstalled: boolean;
 }
 
-const ExtensionCard: React.FC<ExtensionCardProps> = ({ extension, isInstalled }) => {
-    const { installExtension, uninstallExtension, isLoading } = useExtensionsService();
+const ExtensionCard: React.FC<ExtensionCardProps> = ({ extension }) => {
+    const { install, uninstall, isLoading } = useExtensionsService();
 
     const handleInstall = async () => {
-        await installExtension(extension);
+        await install(extension.id);
     };
 
-    const handleUninstall = async () => {
-        await uninstallExtension(extension.id);
+    const handleUninstall = () => {
+        uninstall(extension.id);
     };
 
     const formatDownloads = (count: number): string => {
@@ -179,18 +218,18 @@ const ExtensionCard: React.FC<ExtensionCardProps> = ({ extension, isInstalled })
                         ⭐ {extension.rating.toFixed(1)}
                     </span>
                     <span className="extension-card__downloads">
-                        ⬇️ {formatDownloads(extension.downloadCount)}
+                        ⬇️ {formatDownloads(extension.downloads)}
                     </span>
                     <div className="extension-card__tags">
-                        {extension.tags.slice(0, 2).map(tag => (
-                            <span key={tag} className="extension-card__tag">{tag}</span>
+                        {extension.categories.slice(0, 2).map(cat => (
+                            <span key={cat} className="extension-card__tag">{cat}</span>
                         ))}
                     </div>
                 </div>
             </div>
 
             <div className="extension-card__actions">
-                {isInstalled ? (
+                {extension.installed ? (
                     <button
                         className="extension-card__btn extension-card__btn--uninstall"
                         onClick={handleUninstall}
