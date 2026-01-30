@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Phase CSS - IDE Components */
+@import './styles/phase8-components.css';
+@import './styles/phase9-components.css';
+@import './styles/phase10-components.css';
+@import './styles/phase11-components.css';
+@import './styles/phase12-components.css';
+
 /* Obsidian Glass Design System */
 :root {
   /* Colors */
@@ -15,11 +22,11 @@
   --color-text-muted: #6b7280;
   --color-accent: #3b82f6;
   --color-accent-hover: #2563eb;
-  
+
   /* Spacing */
   --panel-gap: 2px;
   --panel-radius: 6px;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
@@ -31,7 +38,9 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -63,25 +72,25 @@ html, body, #root {
     backdrop-filter: blur(12px);
     border: 1px solid var(--color-border);
   }
-  
+
   .glass-subtle {
     background: rgba(26, 29, 36, 0.6);
     backdrop-filter: blur(8px);
   }
-  
+
   .panel-bg {
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
   }
-  
+
   .interactive {
     transition: all var(--transition-fast);
   }
-  
+
   .interactive:hover {
     background: rgba(255, 255, 255, 0.05);
   }
-  
+
   .glow-accent {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
   }
@@ -118,18 +127,17 @@ html, body, #root {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 .shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.05),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }

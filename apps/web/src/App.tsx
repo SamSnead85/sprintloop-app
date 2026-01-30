@@ -28,6 +28,17 @@ import { AIChatPanel } from './components/AIChatPanel'
 import { StatusBar } from './components/StatusBar'
 import { useChatStore } from './stores/chat-store'
 
+// Phase 11/12 Components
+import { SettingsPanel } from './components/SettingsPanel'
+import { ExtensionsPanel } from './components/ExtensionsPanel'
+import { SourceControlPanel } from './components/SourceControlPanel'
+import { SearchPanelComponent } from './components/SearchPanelComponent'
+import { DebugPanel } from './components/DebugPanel'
+import { QuickOpen } from './components/QuickOpen'
+import { ToastContainer } from './components/ToastContainer'
+import { useQuickOpenService } from './lib/navigation/quick-open-service'
+import { useBreadcrumbsService } from './lib/navigation/breadcrumbs-service'
+
 
 // App state
 interface ProjectState {
@@ -187,17 +198,70 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
     const { mode } = useProjectStore()
     const { isStreaming } = useChatStore()
 
-    // Keyboard shortcut to toggle AI panel (Cmd+Shift+A)
+    // Quick Open service
+    const { open: openQuickOpen } = useQuickOpenService()
+
+    // Breadcrumbs - initialize with current file path
+    const { updateFromPath } = useBreadcrumbsService()
+
+    // Keyboard shortcuts for IDE features
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Cmd+Shift+A - Toggle AI Panel
             if (e.metaKey && e.shiftKey && e.key === 'a') {
                 e.preventDefault()
                 setShowAIPanel(prev => !prev)
             }
+            // Cmd+P - Quick Open
+            if (e.metaKey && e.key === 'p' && !e.shiftKey) {
+                e.preventDefault()
+                openQuickOpen('files')
+            }
+            // Cmd+Shift+P - Command Palette (already handled)
+            // Cmd+Shift+E - Explorer
+            if (e.metaKey && e.shiftKey && e.key === 'e') {
+                e.preventDefault()
+                setActivePanel('files')
+            }
+            // Cmd+Shift+F - Search
+            if (e.metaKey && e.shiftKey && e.key === 'f') {
+                e.preventDefault()
+                setActivePanel('search')
+            }
+            // Cmd+Shift+G - Source Control
+            if (e.metaKey && e.shiftKey && e.key === 'g') {
+                e.preventDefault()
+                setActivePanel('git')
+            }
+            // Cmd+Shift+X - Extensions
+            if (e.metaKey && e.shiftKey && e.key === 'x') {
+                e.preventDefault()
+                setActivePanel('extensions')
+            }
+            // Cmd+Shift+D - Debug
+            if (e.metaKey && e.shiftKey && e.key === 'd') {
+                e.preventDefault()
+                setActivePanel('debug')
+            }
+            // Cmd+, - Settings
+            if (e.metaKey && e.key === ',') {
+                e.preventDefault()
+                setActivePanel('settings')
+            }
+            // Cmd+` - Toggle Bottom Panel
+            if (e.metaKey && e.key === '`') {
+                e.preventDefault()
+                setShowBottomPanel(prev => !prev)
+            }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
+    }, [openQuickOpen])
+
+    // Initialize breadcrumbs with demo path
+    useEffect(() => {
+        updateFromPath('src/App.tsx')
+    }, [updateFromPath])
 
     // Inline edit mode (Cmd+K)
     const { isOpen: inlineEditOpen, selection, closeEditMode } = useInlineEditMode()
@@ -256,21 +320,18 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
                     {/* Side Panel (File Explorer / Search / Git / etc) */}
                     <Panel defaultSize={18} minSize={12} maxSize={30} className="panel-bg">
                         {activePanel === 'files' && <FileExplorer projectName={project.name} />}
-                        {activePanel === 'search' && (
-                            <div className="p-4 text-gray-500 text-sm">Search panel</div>
-                        )}
-                        {activePanel === 'git' && (
-                            <div className="p-4 text-gray-500 text-sm">Source control</div>
-                        )}
+                        {activePanel === 'search' && <SearchPanelComponent />}
+                        {activePanel === 'git' && <SourceControlPanel />}
+                        {activePanel === 'debug' && <DebugPanel />}
+                        {activePanel === 'extensions' && <ExtensionsPanel />}
                         {activePanel === 'kanban' && (
                             <div className="p-4 text-gray-500 text-sm">Kanban in bottom panel</div>
                         )}
-                        {activePanel === 'preview' && (
-                            <PreviewPanel />
+                        {activePanel === 'preview' && <PreviewPanel />}
+                        {activePanel === 'ai' && (
+                            <div className="p-4 text-gray-500 text-sm">AI panel on right</div>
                         )}
-                        {activePanel === 'settings' && (
-                            <div className="p-4 text-gray-500 text-sm">Settings</div>
-                        )}
+                        {activePanel === 'settings' && <SettingsPanel />}
                     </Panel>
 
                     <ResizeHandle />
@@ -325,6 +386,12 @@ function IDELayout({ project, onCloseProject, onModelChange: _onModelChange }: I
                     onCancel={closeEditMode}
                 />
             )}
+
+            {/* Quick Open (Cmd+P) */}
+            <QuickOpen />
+
+            {/* Toast Notifications */}
+            <ToastContainer />
         </div>
     )
 }
