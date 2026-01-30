@@ -1,0 +1,394 @@
+/* Phase 23 - Snippets Manager Styles */
+
+/* =============================================================================
+   SNIPPETS MANAGER LAYOUT
+   ============================================================================= */
+
+.snippets-manager {
+    display: flex;
+    height: 100%;
+    background: var(--color-bg-primary);
+}
+
+.snippets-sidebar {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+}
+
+.snippets-detail {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* =============================================================================
+   SIDEBAR HEADER
+   ============================================================================= */
+
+.snippets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.snippets-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.new-snippet-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+}
+
+.new-snippet-btn:hover {
+    opacity: 0.9;
+}
+
+/* =============================================================================
+   SEARCH & FILTERS
+   ============================================================================= */
+
+.snippets-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--color-bg-primary);
+    margin: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+}
+
+.snippets-search svg {
+    color: var(--color-text-muted);
+}
+
+.snippets-search input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--color-text-primary);
+    font-size: 12px;
+    outline: none;
+}
+
+.snippets-search button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.snippets-filters {
+    padding: 0 12px 12px;
+}
+
+.snippets-filters select {
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* =============================================================================
+   SNIPPET LIST
+   ============================================================================= */
+
+.snippets-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.no-snippets {
+    padding: 24px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.snippet-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.snippet-item:hover {
+    background: var(--color-bg-hover);
+}
+
+.snippet-item.selected {
+    background: var(--color-accent-bg);
+}
+
+.snippet-prefix {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--color-bg-tertiary);
+    border-radius: 3px;
+    color: var(--color-accent);
+}
+
+.snippet-name {
+    flex: 1;
+    font-size: 12px;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.snippet-source {
+    font-size: 12px;
+    color: #22c55e;
+}
+
+/* =============================================================================
+   NO SELECTION
+   ============================================================================= */
+
+.no-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--color-text-muted);
+}
+
+.no-selection p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.no-selection button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    background: var(--color-accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+/* =============================================================================
+   SNIPPET DETAIL VIEW
+   ============================================================================= */
+
+.snippet-detail-view {
+    padding: 24px;
+}
+
+.detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.detail-title h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    color: var(--color-text-primary);
+}
+
+.detail-title code {
+    padding: 4px 8px;
+    font-size: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: 4px;
+    color: var(--color-accent);
+}
+
+.detail-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.detail-actions button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.detail-actions button:hover {
+    background: var(--color-bg-hover);
+}
+
+.detail-actions .delete-btn {
+    color: #ef4444;
+}
+
+.detail-actions .delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.detail-description {
+    margin: 0 0 16px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+}
+
+.detail-meta {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.detail-body h4 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.detail-body pre {
+    margin: 0;
+    padding: 16px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-primary);
+    overflow-x: auto;
+}
+
+/* =============================================================================
+   SNIPPET EDITOR
+   ============================================================================= */
+
+.snippet-editor {
+    padding: 24px;
+}
+
+.editor-row {
+    margin-bottom: 16px;
+}
+
+.editor-row label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.editor-row input {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 13px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-primary);
+}
+
+.editor-row input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.scope-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.scope-list button {
+    padding: 6px 12px;
+    font-size: 11px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.scope-list button.active {
+    background: var(--color-accent-bg);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+
+.body-row textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-primary);
+    resize: vertical;
+}
+
+.body-row textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.editor-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.editor-actions button {
+    padding: 10px 20px;
+    font-size: 13px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.editor-actions .save-btn {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+}
