@@ -1,0 +1,314 @@
+/* Phase 21 - Workspace Management Styles */
+
+/* =============================================================================
+   WELCOME VIEW
+   ============================================================================= */
+
+.welcome-view {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%);
+    overflow-y: auto;
+}
+
+.welcome-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.welcome-close:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+.welcome-header {
+    text-align: center;
+    margin-bottom: 48px;
+}
+
+.welcome-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.logo-icon {
+    font-size: 48px;
+}
+
+.logo-text {
+    font-size: 36px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--color-accent) 0%, #a855f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.welcome-tagline {
+    font-size: 16px;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* =============================================================================
+   QUICK ACTIONS
+   ============================================================================= */
+
+.welcome-actions {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 48px;
+}
+
+.action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 32px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.action-card:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.action-card span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* =============================================================================
+   NEW WORKSPACE DIALOG
+   ============================================================================= */
+
+.new-workspace-dialog {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+    padding: 16px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+}
+
+.new-workspace-dialog input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-primary);
+    font-size: 13px;
+}
+
+.new-workspace-dialog input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.new-workspace-dialog button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    font-size: 13px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.new-workspace-dialog button:first-of-type {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+}
+
+.new-workspace-dialog button:hover {
+    opacity: 0.9;
+}
+
+/* =============================================================================
+   RECENT PROJECTS
+   ============================================================================= */
+
+.welcome-recent {
+    width: 100%;
+    max-width: 700px;
+}
+
+.recent-section {
+    margin-bottom: 32px;
+}
+
+.recent-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.no-recent {
+    text-align: center;
+    padding: 32px;
+    color: var(--color-text-muted);
+}
+
+.no-recent p {
+    margin: 0 0 8px;
+}
+
+.no-recent .hint {
+    font-size: 12px;
+}
+
+/* =============================================================================
+   PROJECT CARD
+   ============================================================================= */
+
+.project-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.project-card:hover {
+    background: var(--color-bg-hover);
+    border-color: var(--color-accent);
+}
+
+.project-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--color-bg-tertiary);
+    border-radius: 8px;
+    color: var(--color-accent);
+}
+
+.project-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.project-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.project-path {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-time {
+    font-size: 11px;
+    color: var(--color-text-muted);
+}
+
+.project-actions {
+    display: none;
+    gap: 4px;
+}
+
+.project-card:hover .project-actions {
+    display: flex;
+}
+
+.project-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+
+.project-actions button:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-accent);
+}
+
+/* =============================================================================
+   FOOTER
+   ============================================================================= */
+
+.welcome-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 32px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.footer-link {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+}
