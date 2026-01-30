@@ -1,0 +1,304 @@
+/* Phase 14 - Context Menus & Refactoring Styles */
+
+/* =============================================================================
+   CONTEXT MENU
+   ============================================================================= */
+
+.context-menu {
+    position: fixed;
+    min-width: 200px;
+    max-width: 320px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 4px;
+    z-index: 10000;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.context-menu-item:hover {
+    background: var(--color-bg-hover);
+}
+
+.context-menu-item.disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+}
+
+.context-menu-item.disabled:hover {
+    background: transparent;
+}
+
+.context-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--color-border);
+}
+
+.context-menu-check {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    flex-shrink: 0;
+}
+
+.context-menu-icon {
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.context-menu-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.context-menu-shortcut {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-left: 16px;
+    flex-shrink: 0;
+}
+
+.context-menu-arrow {
+    color: var(--color-text-muted);
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.context-menu-submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    min-width: 180px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    margin-left: 4px;
+}
+
+/* =============================================================================
+   REFACTORING PREVIEW
+   ============================================================================= */
+
+.refactoring-preview {
+    position: fixed;
+    bottom: 64px;
+    right: 16px;
+    width: 360px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.refactoring-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: var(--color-bg-tertiary);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.refactoring-preview-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.refactoring-preview-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.refactoring-preview-close:hover {
+    color: var(--color-text-primary);
+    background: var(--color-bg-hover);
+}
+
+.refactoring-preview-content {
+    padding: 16px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.refactoring-preview-description {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin-bottom: 12px;
+}
+
+.refactoring-preview-changes {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.refactoring-preview-change {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.refactoring-preview-change:last-child {
+    border-bottom: none;
+}
+
+.refactoring-change-type {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.refactoring-change-type.insert {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+.refactoring-change-type.replace {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.refactoring-change-type.delete {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.refactoring-preview-file {
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+.refactoring-preview-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border);
+}
+
+.refactoring-btn {
+    flex: 1;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+
+.refactoring-btn-apply {
+    background: var(--color-accent);
+    color: white;
+    border: none;
+}
+
+.refactoring-btn-apply:hover {
+    background: var(--color-accent-hover);
+}
+
+.refactoring-btn-cancel {
+    background: transparent;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.refactoring-btn-cancel:hover {
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+}
+
+/* =============================================================================
+   RENAME WIDGET
+   ============================================================================= */
+
+.rename-widget {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 200px;
+    overflow: hidden;
+}
+
+.rename-widget-input {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-family: monospace;
+    background: var(--color-bg-primary);
+    border: none;
+    color: var(--color-text-primary);
+    outline: none;
+}
+
+.rename-widget-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+.rename-widget-preview {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    background: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border);
+}
+
+.rename-widget-count {
+    font-weight: 500;
+    color: var(--color-accent);
+}
+
+.rename-widget-actions {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--color-bg-tertiary);
+    border-top: 1px solid var(--color-border);
+}
+
+.rename-widget-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+}
