@@ -1,103 +1,76 @@
 /**
  * Breadcrumbs Component
  * 
- * File path navigation showing current location in file tree.
+ * File and symbol navigation breadcrumbs with dropdown.
  */
 
 import React from 'react';
+import {
+    useBreadcrumbsService,
+} from '../lib/navigation/breadcrumbs-service';
 
 interface BreadcrumbsProps {
-    filePath?: string;
-    symbols?: BreadcrumbSymbol[];
     className?: string;
-    onNavigate?: (path: string) => void;
-    onSymbolClick?: (symbol: BreadcrumbSymbol) => void;
 }
 
-export interface BreadcrumbSymbol {
-    name: string;
-    kind: 'file' | 'class' | 'function' | 'method' | 'property' | 'variable';
-    range?: { startLine: number; endLine: number };
-}
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ className }) => {
+    const {
+        items,
+        activeIndex,
+        isDropdownOpen,
+        dropdownIndex,
+        dropdownItems,
+        navigateToItem,
+        openDropdown,
+        closeDropdown,
+        navigateToSymbol,
+    } = useBreadcrumbsService();
 
-export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
-    filePath,
-    symbols = [],
-    className,
-    onNavigate,
-    onSymbolClick,
-}) => {
-    if (!filePath) return null;
-
-    const segments = filePath.split('/').filter(Boolean);
-    const fileName = segments.pop() || '';
+    if (items.length === 0) {
+        return null;
+    }
 
     return (
         <div className={`breadcrumbs ${className || ''}`}>
-            {/* Path segments */}
-            {segments.map((segment, i) => {
-                const path = '/' + segments.slice(0, i + 1).join('/');
-                return (
-                    <React.Fragment key={i}>
+            {items.map((item, idx) => (
+                <React.Fragment key={item.id}>
+                    {idx > 0 && <span className="breadcrumbs__separator">›</span>}
+                    <div className="breadcrumbs__item-wrap">
                         <button
-                            className="breadcrumbs__segment"
-                            onClick={() => onNavigate?.(path)}
+                            className={`breadcrumbs__item ${idx === activeIndex ? 'breadcrumbs__item--active' : ''}`}
+                            onClick={() => navigateToItem(idx)}
+                            onMouseEnter={() => openDropdown(idx)}
                         >
-                            {i === 0 ? '📁' : ''} {segment}
+                            <span className="breadcrumbs__icon">{item.icon}</span>
+                            <span className="breadcrumbs__label">{item.name}</span>
                         </button>
-                        <span className="breadcrumbs__separator">/</span>
-                    </React.Fragment>
-                );
-            })}
 
-            {/* File name */}
-            <span className="breadcrumbs__file">
-                {getFileIcon(fileName)} {fileName}
-            </span>
-
-            {/* Symbol path */}
-            {symbols.map((symbol, i) => (
-                <React.Fragment key={i}>
-                    <span className="breadcrumbs__separator">›</span>
-                    <button
-                        className="breadcrumbs__symbol"
-                        onClick={() => onSymbolClick?.(symbol)}
-                    >
-                        {getSymbolIcon(symbol.kind)} {symbol.name}
-                    </button>
+                        {/* Dropdown */}
+                        {isDropdownOpen && dropdownIndex === idx && (
+                            <div
+                                className="breadcrumbs__dropdown"
+                                onMouseLeave={closeDropdown}
+                            >
+                                {dropdownItems.map(dropItem => (
+                                    <button
+                                        key={dropItem.id}
+                                        className="breadcrumbs__dropdown-item"
+                                        onClick={() => {
+                                            navigateToSymbol(dropItem);
+                                            closeDropdown();
+                                        }}
+                                    >
+                                        <span className="breadcrumbs__dropdown-icon">{dropItem.icon}</span>
+                                        <span>{dropItem.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </React.Fragment>
             ))}
         </div>
     );
 };
-
-function getFileIcon(fileName: string): string {
-    const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
-    const icons: Record<string, string> = {
-        '.ts': '🔷',
-        '.tsx': '⚛️',
-        '.js': '🟨',
-        '.jsx': '⚛️',
-        '.json': '📋',
-        '.md': '📝',
-        '.css': '🎨',
-        '.html': '🌐',
-        '.py': '🐍',
-        '.rs': '🦀',
-    };
-    return icons[ext] || '📄';
-}
-
-function getSymbolIcon(kind: BreadcrumbSymbol['kind']): string {
-    const icons: Record<BreadcrumbSymbol['kind'], string> = {
-        file: '📄',
-        class: '🔶',
-        function: '🟣',
-        method: '🔵',
-        property: '🔹',
-        variable: '📦',
-    };
-    return icons[kind];
-}
 
 export default Breadcrumbs;
